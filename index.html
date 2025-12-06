@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Velocity - A Custom Jumper</title>
+    
+    <style>
+        /* --- CSS for Polished Menu and Game Canvas --- */
+        
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a2e; /* Dark, space-like background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e94560;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 800px; /* Standard game width */
+            height: 400px; /* Standard game height */
+            border: 4px solid #16213e;
+            box-shadow: 0 0 40px rgba(233, 69, 96, 0.5);
+            background: #0f3460;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Menu Styling */
+        #main-menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(15, 52, 96, 0.95);
+            z-index: 100;
+            transition: opacity 0.5s ease;
+        }
+
+        #main-menu.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px #e94560;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            margin: 10px;
+            background: #e94560;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        button:hover {
+            background: #ff6a80;
+            transform: translateY(-2px);
+        }
+
+        /* Player Shape Styling (The initial Cube) */
+        #player {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #f7b731; /* Bright yellow/orange */
+            left: 50px;
+            bottom: 30px; /* Initial ground position */
+            transition: background-color 0.2s;
+            /* Using a box-shadow for a glow effect */
+            box-shadow: 0 0 15px #f7b731;
+        }
+
+        /* Ground line visualization (Conceptual) */
+        #ground {
+            position: absolute;
+            width: 100%;
+            height: 10px;
+            background: #16213e;
+            bottom: 0;
+        }
+        
+        /* Shape Customization Preview */
+        #shape-selector {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .shape-option {
+            width: 40px;
+            height: 40px;
+            background: #4e4e5e;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: border 0.2s, transform 0.2s;
+        }
+        .shape-option:hover {
+            transform: scale(1.1);
+        }
+        .shape-option.selected {
+            border: 3px solid #e94560;
+            box-shadow: 0 0 10px #e94560;
+        }
+
+        /* Individual Shape Styles for Preview */
+        #shape-cube { border-radius: 0; }
+        #shape-hex { 
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); 
+            background: #f7b731;
+        }
+        #shape-star {
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            background: #39e75f;
+        }
+        #shape-triangle {
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+            background: #39e7e7;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        
+        <div id="main-menu">
+            <h1>VECTOR VELOCITY</h1>
+            <p>The Ultimate Rhythm Challenge</p>
+            
+            <h3>Select Your Jumper Shape:</h3>
+            <div id="shape-selector">
+                <div class="shape-option selected" id="shape-cube" data-shape="cube"></div>
+                <div class="shape-option" id="shape-hex" data-shape="hexagon"></div>
+                <div class="shape-option" id="shape-star" data-shape="star"></div>
+                <div class="shape-option" id="shape-triangle" data-shape="triangle"></div>
+            </div>
+
+            <button onclick="startGame()">LAUNCH LEVEL 1: THE ASCENT</button>
+            <p style="font-size: 0.9em;">(Press **Space** or **Click** to Jump)</p>
+        </div>
+
+        <div id="player"></div>
+        <div id="ground"></div>
+
+        <div id="end-cutscene" style="display: none;">
+            </div>
+
+    </div>
+
+    <script>
+        const player = document.getElementById('player');
+        const menu = document.getElementById('main-menu');
+        const container = document.getElementById('game-container');
+        const groundY = 30; // 30px from the bottom of the container
+        const playerSize = 30;
+        
+        let gameState = {
+            isRunning: false,
+            playerY: groundY,
+            velocityY: 0,
+            gravity: 1.2,
+            jumpPower: -22,
+            selectedShape: 'cube',
+            levelIndex: 0,
+            levelNames: [
+                "The Ascent", "Rhythm Rift", "Zigzag Sector", "Velocity Vortex", 
+                "Neon Grid", "The Gauntlet", "Hyperlane", "Crystal Collapse", 
+                "Infinity Loop", "Vector's Zenith"
+            ]
+        };
+
+        // --- 1. CORE PLAYER JUMP LOGIC ---
+        
+        function handleJump() {
+            if (gameState.isRunning && gameState.playerY === groundY) {
+                gameState.velocityY = gameState.jumpPower;
+            }
+        }
+
+        // --- 2. GAME LOOP (The "Functioning Jump Thingy") ---
+        
+        function gameLoop() {
+            if (!gameState.isRunning) return;
+
+            // Apply Gravity
+            gameState.velocityY += gameState.gravity;
+            gameState.playerY -= gameState.velocityY;
+
+            // Check Ground Collision
+            if (gameState.playerY < groundY) {
+                gameState.playerY = groundY;
+                gameState.velocityY = 0;
+            }
+
+            // Update Player Position in CSS
+            player.style.bottom = gameState.playerY + 'px';
+
+            // **TODO: Add Obstacle Movement and Collision Check here**
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- 3. GAME STATE MANAGEMENT ---
+
+        function startGame() {
+            menu.classList.add('hidden');
+            gameState.isRunning = true;
+            gameState.playerY = groundY;
+            gameState.velocityY = 0;
+            
+            // Update the player shape to the selected type
+            applyShape(gameState.selectedShape);
+            
+            // Start the physics simulation
+            gameLoop();
+        }
+        
+        // --- 4. SHAPE CUSTOMIZATION ---
+
+        function applyShape(shape) {
+            player.className = ''; // Reset existing classes
+            player.style.backgroundColor = ''; // Reset background
+            player.style.clipPath = ''; // Reset shape
+
+            if (shape === 'cube') {
+                player.style.backgroundColor = '#f7b731';
+            } else if (shape === 'hexagon') {
+                player.style.backgroundColor = '#f7b731';
+                player.style.clipPath = 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
+            } else if (shape === 'star') {
+                player.style.backgroundColor = '#39e75f';
+                player.style.clipPath = 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
+            } else if (shape === 'triangle') {
+                player.style.backgroundColor = '#39e7e7';
+                player.style.clipPath = 'polygon(50% 0%, 100% 100%, 0% 100%)';
+            }
+            gameState.selectedShape = shape;
+        }
+
+        // Event listener for shape selection on the menu
+        document.querySelectorAll('.shape-option').forEach(el => {
+            el.addEventListener('click', function() {
+                // Deselect all
+                document.querySelectorAll('.shape-option').forEach(opt => opt.classList.remove('selected'));
+                // Select clicked
+                this.classList.add('selected');
+                gameState.selectedShape = this.dataset.shape;
+            });
+        });
+
+
+        // --- 5. INPUT HANDLER ---
+        
+        // Listen for spacebar press or click/touch anywhere on the game container
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault(); // Prevent scrolling
+                handleJump();
+            }
+        });
+
+        container.addEventListener('click', handleJump);
+
+        // **TODO: Implement the endCutscene() function here**
+        /*
+        function endCutscene() {
+            gameState.isRunning = false;
+            // Display the 'end-cutscene' div with the custom animation
+            // Show the next level button, etc.
+        }
+        */
+
+    </script>
+</body>
+</html>
