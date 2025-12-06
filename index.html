@@ -3,166 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vector Velocity: FIXED</title>
+    <title>Vector Velocity: Optimized Zenith</title>
     <style>
+        /* --- GLOBAL STYLES & UI FONT --- */
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
         :root {
             --primary: #00f2ff;
             --danger: #ff0055;
             --orb: #ffeb3b;
+            --zenith-gold: #ffd700;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.2);
         }
 
         body {
-            margin: 0;
-            background-color: #050505;
-            color: white;
-            font-family: 'Orbitron', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            user-select: none;
+            margin: 0; background-color: #050505; color: white;
+            font-family: 'Orbitron', sans-serif; display: flex;
+            justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden; user-select: none;
         }
 
         #game-wrapper {
-            position: relative;
-            width: 800px;
-            height: 450px;
+            position: relative; width: 800px; height: 450px;
             background: linear-gradient(180deg, #1a1a2e 0%, #000000 100%);
-            border: 4px solid var(--primary);
-            box-shadow: 0 0 50px rgba(0, 242, 255, 0.2);
-            overflow: hidden;
-            border-radius: 8px;
+            border: 4px solid var(--primary); box-shadow: 0 0 70px rgba(0, 242, 255, 0.3);
+            overflow: hidden; border-radius: 8px;
         }
 
-        /* --- BACKGROUND --- */
+        /* --- BACKGROUND & ENTITIES --- */
         .bg-grid {
-            position: absolute;
-            width: 200%;
-            height: 100%;
+            position: absolute; width: 200%; height: 100%;
             background-image: linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
             linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
-            background-size: 60px 60px;
-            animation: scrollBg 5s linear infinite;
-            z-index: 0;
+            background-size: 60px 60px; animation: scrollBg 5s linear infinite; z-index: 0;
         }
         @keyframes scrollBg { from { transform: translateX(0); } to { transform: translateX(-60px); } }
 
-        /* --- ENTITIES --- */
-        #player {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            /* Default skin, changes via JS */
-            background: linear-gradient(45deg, #fce38a, #f38181); 
-            border: 2px solid white;
-            box-sizing: border-box;
-            z-index: 20;
-            left: 150px; /* Fixed Horizontal Position */
-        }
-
-        /* Ship Shape */
-        #player.ship {
-            border-radius: 0 50% 50% 0;
-            height: 25px;
-            margin-bottom: 7px; /* Center adjustment */
-        }
+        #player { position: absolute; width: 40px; height: 40px; border: 2px solid white; box-sizing: border-box; z-index: 20; left: 150px; transition: height 0.1s, margin 0.1s; }
+        #player.ship { border-radius: 0 50% 50% 0; height: 25px; margin-bottom: 7px; }
 
         #floor, #ceiling {
-            position: absolute;
-            width: 100%;
-            height: 90px;
-            background: #0f0f1a;
-            z-index: 10;
-            border-top: 3px solid white;
-            bottom: 0;
+            position: absolute; width: 100%; height: 90px; background: #0f0f1a; z-index: 10;
+            border-top: 3px solid white; bottom: 0;
         }
-        #ceiling {
-            top: -90px;
-            bottom: auto;
-            border-bottom: 3px solid white;
-            border-top: none;
-            transition: top 0.3s;
-        }
+        #ceiling { top: -90px; bottom: auto; border-bottom: 3px solid white; border-top: none; transition: top 0.3s; }
 
-        /* --- OBSTACLES --- */
-        .obstacle { position: absolute; z-index: 15; }
-
-        /* Spike Hitbox is smaller than visual to be fair */
-        .spike {
-            width: 40px; height: 40px;
-        }
+        .obstacle { position: absolute; z-index: 15; transition: left 0.01s linear, opacity 0.1s; } /* Optimization: Transition on left is required for smooth movement */
+        .spike { width: 40px; height: 40px; }
         .spike::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0;
-            width: 0; height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-bottom: 40px solid var(--danger);
-            filter: drop-shadow(0 0 5px var(--danger));
+            content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 0;
+            border-left: 20px solid transparent; border-right: 20px solid transparent;
+            border-bottom: 40px solid var(--danger); filter: drop-shadow(0 0 5px var(--danger));
         }
+        .orb { width: 36px; height: 36px; background: radial-gradient(circle, var(--orb) 40%, transparent 70%); border: 3px solid var(--orb); border-radius: 50%; box-shadow: 0 0 15px var(--orb); animation: pulse 0.5s infinite alternate; }
+        .orb.used { opacity: 0.3 !important; animation: none; cursor: default; }
 
-        .block {
-            width: 40px; height: 40px;
-            background: rgba(0, 242, 255, 0.2);
-            border: 2px solid var(--primary);
-            box-sizing: border-box;
-        }
-
-        .orb {
-            width: 36px; height: 36px;
-            background: radial-gradient(circle, var(--orb) 40%, transparent 70%);
-            border: 3px solid var(--orb);
-            border-radius: 50%;
-            box-shadow: 0 0 15px var(--orb);
-            animation: pulse 0.5s infinite alternate;
-        }
-        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
-
-        .portal {
-            width: 30px; height: 90px;
-            border-radius: 10px;
-            opacity: 0.8;
-            box-shadow: 0 0 20px currentColor;
-        }
-        .portal-ship { background: #d900ff; color: #d900ff; }
-        .portal-cube { background: #00ff6a; color: #00ff6a; }
-
-        /* --- UI --- */
+        /* --- UI STYLES --- */
         .ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 100; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            background: rgba(0,0,0,0.92);
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); transition: opacity 0.3s;
         }
         .hidden { display: none !important; }
 
-        h1 { margin: 0; font-size: 2.5rem; color: var(--primary); text-transform: uppercase; letter-spacing: 5px; }
-        h2 { margin: 10px 0 20px 0; font-size: 1rem; color: #aaa; font-weight: normal; }
-
-        /* Skin Selector */
-        .skin-container { display: flex; gap: 15px; margin: 20px 0; }
-        .skin-opt { width: 50px; height: 50px; cursor: pointer; border: 2px solid #333; transition: 0.2s; }
-        .skin-opt:hover { transform: scale(1.1); }
-        .skin-opt.selected { border-color: white; box-shadow: 0 0 15px white; }
-
+        h1 { margin: 0; font-size: 2.8rem; color: var(--primary); text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 10px var(--primary); }
         .btn {
-            padding: 15px 50px; font-family: 'Orbitron'; font-size: 1.2rem;
-            color: white; background: var(--danger); border: none;
-            cursor: pointer; transition: 0.2s; clip-path: polygon(10% 0, 100% 0, 100% 100%, 0% 100%, 0% 10%);
-        }
-        .btn:hover { background: white; color: black; transform: scale(1.05); }
-
-        select {
-            padding: 10px; background: #111; color: white; border: 1px solid #333;
-            font-family: 'Orbitron'; margin-bottom: 20px; font-size: 1.1rem;
+            padding: 15px 50px; font-family: 'Orbitron'; font-size: 1.2rem; font-weight: bold;
+            color: white; background: var(--danger); border: none; cursor: pointer; transition: 0.2s; border-radius: 5px;
+            box-shadow: 0 0 20px var(--danger); text-shadow: 0 0 5px black;
         }
 
-        #hud { position: absolute; top: 20px; left: 20px; z-index: 50; font-size: 1.2rem; }
-        #progress-bar { position: absolute; top: 0; left: 0; height: 6px; background: var(--primary); width: 0%; z-index: 90; }
+        /* --- PAUSE MENU SPECIFIC STYLES --- */
+        #pause-menu {
+            /* Reset to Glassmorphism appearance */
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        .pause-btn {
+            margin: 10px 0; padding: 15px 70px; font-size: 1.1rem;
+            background: transparent; border: 2px solid white;
+            box-shadow: 0 0 10px white;
+            transition: 0.3s;
+        }
+
+        /* RGB GLOW EFFECT */
+        #pause-menu .pause-btn:nth-child(2) {
+            /* Restart (RGB Glow) */
+            border-color: #ff0077;
+            box-shadow: 0 0 15px #ff0077, 0 0 30px #ff0077;
+            color: #fff;
+            text-shadow: 0 0 5px #ff0077;
+        }
+        #pause-menu .pause-btn:nth-child(3) {
+            /* Main Menu (RGB Glow) */
+            border-color: #00ff77;
+            box-shadow: 0 0 15px #00ff77, 0 0 30px #00ff77;
+            color: #fff;
+            text-shadow: 0 0 5px #00ff77;
+        }
+        .pause-btn:hover {
+            transform: scale(1.05);
+            background: rgba(255,255,255,0.1);
+        }
 
     </style>
 </head>
@@ -171,7 +115,7 @@
     <div id="game-wrapper">
         <div class="bg-grid"></div>
         <div id="progress-bar"></div>
-        <div id="hud" class="hidden"><span id="level-name">Level 1</span></div>
+        <div id="hud" class="hidden"><span id="level-name">Vector Velocity</span></div>
 
         <div id="game-world">
             <div id="player"></div>
@@ -182,10 +126,10 @@
         <div id="ceiling"></div>
 
         <div id="main-menu" class="ui-layer">
-            <h1>Vector Velocity</h1>
-            <h2>Fixed Edition</h2>
+            <h1>VECTOR VELOCITY</h1>
+            <h2>ZENITH EDITION</h2>
 
-            <div style="margin-bottom: 5px; color: #888; font-size: 0.8rem;">SELECT SKIN</div>
+            <div style="margin-bottom: 5px; color: #888; font-size: 0.8rem;">SELECT CUBE SKIN</div>
             <div class="skin-container">
                 <div class="skin-opt selected" style="background: linear-gradient(45deg, #fce38a, #f38181);" onclick="setSkin(this)"></div>
                 <div class="skin-opt" style="background: linear-gradient(45deg, #00c6ff, #0072ff);" onclick="setSkin(this)"></div>
@@ -195,108 +139,93 @@
 
             <select id="level-select">
                 <option value="1">Lvl 1: The Beginning (Easy)</option>
-                <option value="2">Lvl 2: Stereo (Easy)</option>
+                <option value="2">Lvl 2: Stereo (Normal)</option>
                 <option value="3">Lvl 3: Polargeist (Normal)</option>
-                <option value="4">Lvl 4: Dry Out (Normal)</option>
+                <option value="4">Lvl 4: Dry Out (Hard)</option>
                 <option value="5">Lvl 5: Base After (Hard)</option>
-                <option value="6">Lvl 6: Can't Let Go (Hard)</option>
-                <option value="7">Lvl 7: Jumper (Harder)</option>
+                <option value="6">Lvl 6: Can't Let Go (Harder)</option>
+                <option value="7">Lvl 7: Jumper (Insane)</option>
                 <option value="8">Lvl 8: Time Machine (Insane)</option>
                 <option value="9">Lvl 9: NIGHTMARE (Extreme)</option>
-                <option value="10">Lvl 10: ZENITH (Impossible)</option>
+                <option value="10">Lvl 10: ZENITH (IMPOSSIBLE)</option>
             </select>
 
-            <button class="btn" onclick="startGame()">START LEVEL</button>
+            <button class="btn" onclick="startGame()">LAUNCH LEVEL</button>
+        </div>
+
+        <div id="pause-menu" class="ui-layer hidden">
+            <h1 style="font-size: 3rem; margin-bottom: 40px; color: white; text-shadow: 0 0 20px white;">PAUSED</h1>
+            <button class="pause-btn" onclick="togglePause(false)">RESUME</button>
+            <button class="pause-btn" onclick="restartLevel()">RESTART</button>
+            <button class="pause-btn" onclick="showMenu()">MAIN MENU</button>
         </div>
 
         <div id="death-screen" class="ui-layer hidden">
             <h1 style="color: var(--danger);">CRASHED</h1>
             <p id="death-quote" style="color: #aaa; margin: 20px;">0% Complete</p>
-            <button class="btn" onclick="startGame()">RETRY</button>
-            <button class="btn" style="background: transparent; border: 1px solid #555; margin-top: 10px; font-size: 0.8rem;" onclick="showMenu()">MENU</button>
+            <button class="btn" onclick="restartLevel()">RETRY</button>
+            <button class="btn" style="background: transparent; border: 1px solid var(--glass-border); color: white; margin-top: 10px; font-size: 0.8rem; box-shadow: none;" onclick="showMenu()">RETURN TO MENU</button>
         </div>
 
-        <div id="win-screen" class="ui-layer hidden">
-            <h1 style="color: gold;">LEVEL COMPLETE!</h1>
-            <div style="font-size: 4rem; margin: 20px;">🏆</div>
-            <button class="btn" onclick="showMenu()">MENU</button>
+        <div id="end-cutscene" class="ui-layer hidden">
+            <div id="player-trophy"></div>
+            <div id="zenith-message">ZENITH REACHED!</div>
+            <button class="btn" onclick="showMenu()" style="background: var(--zenith-gold); color: black; box-shadow: 0 0 30px var(--zenith-gold);">VICTORY MENU</button>
         </div>
     </div>
 
     <script>
-        // --- AUDIO ENGINE (Procedural & Auto-playing) ---
+        // --- AUDIO ENGINE ---
         const AudioEngine = {
-            ctx: null,
-            isPlaying: false,
-            nextNoteTime: 0,
-            noteIndex: 0,
-            tempo: 120,
+            ctx: null, isPlaying: false, nextNoteTime: 0, noteIndex: 0, tempo: 120,
+            delay: null, feedback: null, 
 
             init: function(levelDifficulty) {
-                // Determine BPM based on level (1-10)
-                if (levelDifficulty <= 3) this.tempo = 120; // Slow
-                else if (levelDifficulty <= 7) this.tempo = 145; // Fast
-                else this.tempo = 175; // Hardcore
-
+                if (levelDifficulty <= 3) this.tempo = 120; else if (levelDifficulty <= 7) this.tempo = 145; else this.tempo = 175;
                 if (!this.ctx) {
                     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.delay = this.ctx.createDelay(1.0); this.delay.delayTime.setValueAtTime(60.0 / this.tempo / 2, this.ctx.currentTime);
+                    this.feedback = this.ctx.createGain(); this.feedback.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                    this.delay.connect(this.feedback); this.feedback.connect(this.delay); this.delay.connect(this.ctx.destination);
                 }
-                if (this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
-                this.isPlaying = true;
-                this.nextNoteTime = this.ctx.currentTime;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                this.isPlaying = true; this.nextNoteTime = this.ctx.currentTime;
                 this.scheduler(levelDifficulty);
             },
+            stop: function() { this.isPlaying = false; },
 
-            stop: function() {
-                this.isPlaying = false;
-            },
-
-            playTone: function(freq, time, type, dur) {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, time);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                gain.gain.setValueAtTime(0.3, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
-                osc.start(time);
-                osc.stop(time + dur);
+            playTone: function(freq, time, type, dur, destination) {
+                const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); const filter = this.ctx.createBiquadFilter();
+                osc.type = type; osc.frequency.setValueAtTime(freq, time);
+                filter.type = 'lowpass'; filter.frequency.setValueAtTime(8000, time);
+                osc.connect(filter); filter.connect(gain);
+                gain.connect(destination || this.ctx.destination);
+                gain.gain.setValueAtTime(0.3, time); gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
+                osc.start(time); osc.stop(time + dur);
             },
 
             scheduler: function(difficulty) {
                 if (!this.isPlaying) return;
-                const secondsPerBeat = 60.0 / this.tempo;
-                const lookahead = 0.1;
+                const secondsPerBeat = 60.0 / this.tempo; const lookahead = 0.1;
+                this.delay.delayTime.setValueAtTime(secondsPerBeat / 2, this.ctx.currentTime);
 
                 while (this.nextNoteTime < this.ctx.currentTime + lookahead) {
-                    // Kick Drum (Every beat)
-                    this.playTone(150, this.nextNoteTime, 'sine', 0.1);
-                    
-                    // Hi-Hat (Off beat)
-                    if (this.noteIndex % 2 !== 0) {
-                         // Simple noise buffer approximation using high freq square
-                         this.playTone(8000, this.nextNoteTime, 'square', 0.05);
-                    }
-
-                    // Bassline (Changes based on difficulty)
+                    this.playTone(100, this.nextNoteTime, 'sine', 0.1, this.ctx.destination); this.playTone(100, this.nextNoteTime, 'sine', 0.1, this.delay);
                     if (this.noteIndex % 4 === 0) {
-                        let bassFreq = (difficulty > 7) ? 45 : 65; // Lower bass for harder levels
-                        this.playTone(bassFreq, this.nextNoteTime, 'sawtooth', 0.3);
+                        let bassFreq = (difficulty > 7) ? 41.2 : 55;
+                        this.playTone(bassFreq, this.nextNoteTime, 'sawtooth', 0.3, this.delay);
                     }
-
-                    this.nextNoteTime += secondsPerBeat;
-                    this.noteIndex++;
+                    if (this.noteIndex % 2 !== 0) {
+                        this.playTone(8000, this.nextNoteTime, 'square', 0.05, this.ctx.destination);
+                    }
+                    this.nextNoteTime += secondsPerBeat; this.noteIndex++;
                 }
                 setTimeout(() => this.scheduler(difficulty), 25);
             }
         };
 
-        // --- GAME ENGINE ---
+        // --- GAME ENGINE & STATE ---
         const playerEl = document.getElementById('player');
-        const worldEl = document.getElementById('game-world');
         const obsContainer = document.getElementById('obstacles-container');
         const floorHeight = 90;
         
@@ -308,10 +237,13 @@
             player: { y: 0, vy: 0, rot: 0, mode: 'cube' },
             gravity: 0.9,
             jumpPower: 14.5,
-            currentSkin: 'linear-gradient(45deg, #fce38a, #f38181)'
+            currentSkin: 'linear-gradient(45deg, #fce38a, #f38181)',
+            activeElements: new Map(), // CRITICAL FIX: Tracks spawned DOM elements
+            currentLevelIndex: 0
         };
 
-        // --- SKIN SELECTION ---
+        // --- UI & CUSTOMIZATION ---
+
         function setSkin(el) {
             document.querySelectorAll('.skin-opt').forEach(d => d.classList.remove('selected'));
             el.classList.add('selected');
@@ -319,138 +251,162 @@
             playerEl.style.background = gameState.currentSkin;
         }
 
-        // --- LEVEL GENERATION (Smart Spacing) ---
         function generateLevel(levelNum) {
             let data = [];
-            // Level length increases with difficulty
             let length = 150 + (levelNum * 20); 
-            let difficulty = levelNum / 10; // 0.1 to 1.0
-
-            let safeCount = 0; // Forced empty spaces
-
+            let difficulty = levelNum / 10;
+            let safeCount = 0; 
+            
             for (let i = 0; i < length; i++) {
-                // First 20 blocks are always safe
+                // Initialize object data with a unique ID and 'used' state for orbs
+                let obj = { id: i, type: 0, x: i * 60, used: false };
+
                 if (i < 20 || safeCount > 0) {
-                    data.push({ type: 0, x: i * 60 });
+                    data.push(obj);
                     safeCount--;
                     continue;
                 }
 
                 let r = Math.random();
-                let type = 0;
+                // Crucial adjustment for tight jumps (3 blocks = 180px gap)
+                const minGap = (levelNum >= 9) ? 3 : 4; 
 
-                // LOGIC: Harder levels = more spikes, less space
-                // Minimum gap is crucial for playability
-                
                 if (r < (0.1 + difficulty * 0.4)) {
-                    // Spawn Spike
-                    type = 1;
-                    safeCount = (difficulty > 0.8) ? 2 : 3; // High levels have tighter gaps
+                    obj.type = 1; // Spike
+                    safeCount = minGap;
                 } else if (r > 0.96 && levelNum > 3) {
-                    // Spawn Orb
-                    type = 3; 
-                    safeCount = 3;
+                    obj.type = 3; // Orb
+                    safeCount = minGap;
                 } else if (i === 60 && levelNum > 1) {
-                    type = 4; // Ship Portal
+                    obj.type = 4; // Ship Portal
                 } else if (i === 120 && levelNum > 1) {
-                    type = 5; // Cube Portal
+                    obj.type = 5; // Cube Portal
                 }
 
-                data.push({ type: type, x: i * 60 });
+                data.push(obj);
             }
             return data;
         }
 
-        // --- CORE FUNCTIONS ---
+        // --- GAME FLOW ---
 
         function startGame() {
             const levelVal = parseInt(document.getElementById('level-select').value);
+            gameState.currentLevelIndex = levelVal;
             
-            // Audio
-            AudioEngine.stop();
-            AudioEngine.init(levelVal);
+            AudioEngine.stop(); AudioEngine.init(levelVal);
 
-            // Reset Logic
-            gameState.active = true;
-            gameState.distance = 0;
-            gameState.player.y = 0;
-            gameState.player.vy = 0;
-            gameState.player.rot = 0;
-            gameState.player.mode = 'cube';
+            // Reset State
+            gameState.active = true; gameState.distance = 0;
+            gameState.player = { y: 0, vy: 0, rot: 0, mode: 'cube' };
             gameState.levelData = generateLevel(levelVal);
 
             // UI Reset
             document.getElementById('main-menu').classList.add('hidden');
             document.getElementById('death-screen').classList.add('hidden');
+            document.getElementById('end-cutscene').classList.add('hidden');
+            document.getElementById('pause-menu').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
             document.getElementById('level-name').innerText = "Level " + levelVal;
             
-            // Player Reset
-            playerEl.style.background = gameState.currentSkin;
-            playerEl.classList.remove('ship');
+            playerEl.style.background = gameState.currentSkin; playerEl.classList.remove('ship');
             document.getElementById('ceiling').style.top = '-90px';
-
-            // Clear World
-            obsContainer.innerHTML = '';
             
-            // Pre-render logic (simplification: we spawn as we go)
+            // Clear all previous DOM elements and map
+            gameState.activeElements.forEach(el => el.remove());
+            gameState.activeElements.clear();
+            
             gameLoop();
         }
 
+        function restartLevel() {
+            // Restart uses the currently selected level index
+            const levelVal = gameState.currentLevelIndex || parseInt(document.getElementById('level-select').value);
+            document.getElementById('level-select').value = levelVal; // Ensure select box matches
+            startGame();
+        }
+        
         function showMenu() {
-            gameState.active = false;
-            AudioEngine.stop();
+            gameState.active = false; AudioEngine.stop();
             document.getElementById('death-screen').classList.add('hidden');
-            document.getElementById('win-screen').classList.add('hidden');
+            document.getElementById('end-cutscene').classList.add('hidden');
+            document.getElementById('pause-menu').classList.add('hidden');
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('main-menu').classList.remove('hidden');
         }
 
+        function togglePause(shouldPause) {
+            // Pause/Unpause game state and audio
+            gameState.active = shouldPause;
+
+            if (shouldPause) {
+                AudioEngine.stop();
+                document.getElementById('pause-menu').classList.remove('hidden');
+            } else {
+                AudioEngine.init(gameState.currentLevelIndex);
+                document.getElementById('pause-menu').classList.add('hidden');
+                gameLoop(); // Resume loop
+            }
+        }
+
         function die() {
-            gameState.active = false;
-            AudioEngine.stop();
-            let pct = Math.floor((gameState.distance / (gameState.levelData.length * 60)) * 100);
+            gameState.active = false; AudioEngine.stop();
+            let totalDist = gameState.levelData.length * 60;
+            let pct = Math.floor((gameState.distance / totalDist) * 100);
             document.getElementById('death-quote').innerText = `${pct}% Complete`;
             document.getElementById('death-screen').classList.remove('hidden');
         }
 
-        // --- INPUT ---
+        function winGame() {
+            gameState.active = false; AudioEngine.stop();
+            document.getElementById('end-cutscene').classList.remove('hidden');
+        }
+
+        // --- INPUT & ORBS ---
         let inputHeld = false;
         
         function handleInput(down) {
             inputHeld = down;
             if (down && gameState.active) {
-                // Cube Jump
                 if (gameState.player.mode === 'cube') {
-                    if (gameState.player.y <= 0.5) { // Ground check
-                        gameState.player.vy = gameState.jumpPower;
-                    }
-                    // Orb Check (Distance based)
+                    if (gameState.player.y <= 0.5) { gameState.player.vy = gameState.jumpPower; }
                     checkOrbs();
                 }
             }
         }
         
+        // Input Listeners
         window.addEventListener('mousedown', () => handleInput(true));
         window.addEventListener('mouseup', () => handleInput(false));
-        window.addEventListener('keydown', (e) => { if(e.code==='Space') handleInput(true) });
+        window.addEventListener('keydown', (e) => { 
+            if(e.code==='Space') handleInput(true);
+            if((e.code==='Escape' || e.code==='KeyP') && gameState.active) { togglePause(true); }
+        });
         window.addEventListener('keyup', (e) => { if(e.code==='Space') handleInput(false) });
+        
+        // Escape to unpause when menu is visible
+        document.getElementById('pause-menu').addEventListener('keydown', (e) => {
+            if (e.code === 'Escape' || e.code === 'KeyP') { togglePause(false); }
+        });
+
 
         function checkOrbs() {
-            // Check active orbs in DOM
             const orbs = document.querySelectorAll('.orb');
             const pRect = playerEl.getBoundingClientRect();
             
-            orbs.forEach(orb => {
-                const oRect = orb.getBoundingClientRect();
-                // Check if close enough
+            orbs.forEach(orbEl => {
+                // Only check orbs that are not used
+                if (orbEl.classList.contains('used')) return;
+
+                const oRect = orbEl.getBoundingClientRect();
                 const dx = (pRect.left + pRect.width/2) - (oRect.left + oRect.width/2);
                 const dy = (pRect.top + pRect.height/2) - (oRect.top + oRect.height/2);
                 const dist = Math.sqrt(dx*dx + dy*dy);
 
-                if (dist < 60) { // Hit radius
-                    gameState.player.vy = 15; // Orb boost
-                    orb.style.opacity = 0; // Visual feedback
+                if (dist < 40) { // Hit radius
+                    gameState.player.vy = 15;
+                    orbEl.classList.add('used'); 
+                    // No need to update levelData state as the game state is cleared on restart.
                 }
             });
         }
@@ -458,141 +414,106 @@
         // --- MAIN LOOP ---
 
         function gameLoop() {
-            if (!gameState.active) return;
+            if (!gameState.active) return; // Crucial check for pausing
 
-            // 1. PHYSICS
+            // 1. PHYSICS (Same as previous version)
             if (gameState.player.mode === 'cube') {
-                gameState.player.vy -= gameState.gravity;
-                gameState.player.y += gameState.player.vy;
-
-                // Floor Collision
-                if (gameState.player.y <= 0) {
-                    gameState.player.y = 0;
-                    gameState.player.vy = 0;
-                    // Snap Rotation
-                    let r = gameState.player.rot % 90;
-                    if (r > 0) gameState.player.rot += (90 - r) * 0.2;
-                } else {
-                    gameState.player.rot += 6; // Spin
-                }
-            } else { // Ship
-                if (inputHeld) gameState.player.vy += 0.5;
-                else gameState.player.vy -= 0.5;
-                
-                // Cap speed
-                if (gameState.player.vy > 8) gameState.player.vy = 8;
-                if (gameState.player.vy < -8) gameState.player.vy = -8;
-
-                gameState.player.y += gameState.player.vy;
-                gameState.player.rot = gameState.player.vy * -3;
-
-                // Ship Ceiling/Floor
+                gameState.player.vy -= gameState.gravity; gameState.player.y += gameState.player.vy;
+                if (gameState.player.y <= 0) { gameState.player.y = 0; gameState.player.vy = 0; gameState.player.rot += (90 - (gameState.player.rot % 90)) * 0.2; } else { gameState.player.rot += 6; }
+            } else { 
+                if (inputHeld) gameState.player.vy += 0.5; else gameState.player.vy -= 0.5;
+                if (gameState.player.vy > 8) gameState.player.vy = 8; if (gameState.player.vy < -8) gameState.player.vy = -8;
+                gameState.player.y += gameState.player.vy; gameState.player.rot = gameState.player.vy * -3;
                 if (gameState.player.y <= 0) { gameState.player.y = 0; gameState.player.vy = 0; }
                 if (gameState.player.y >= 270) { gameState.player.y = 270; gameState.player.vy = 0; }
             }
-
-            // Apply Player Visuals
             playerEl.style.bottom = (floorHeight + gameState.player.y) + 'px';
             playerEl.style.transform = `rotate(${gameState.player.rot}deg)`;
 
-            // 2. WORLD MOVEMENT
+            // 2. WORLD MOVEMENT & COLLISION
             gameState.distance += gameState.speed;
             
-            // 3. SPAWN & RENDER OBSTACLES
-            // We only render objects that are within view (optimization)
-            // Viewport is 0 to 800. Global X is gameState.distance.
-            // Render objects between distance and distance + 900
-            
-            obsContainer.innerHTML = ''; // Clear frame (inefficient but simple for logic)
-            
-            let playerHitbox = playerEl.getBoundingClientRect();
-            // Shrink hitbox slightly for fairness
-            const pRect = {
-                l: playerHitbox.left + 8,
-                r: playerHitbox.right - 8,
-                t: playerHitbox.top + 8,
-                b: playerHitbox.bottom - 8
-            };
-
-            // Loop through level data
-            // Optimization: Find start index approx
             let startIdx = Math.floor(gameState.distance / 60);
-            
+            let objectsRendered = [];
+
             for (let i = startIdx; i < startIdx + 18; i++) {
-                if (!gameState.levelData[i]) {
-                    // Level End
-                    if (i > gameState.levelData.length) {
-                        gameState.active = false;
-                        document.getElementById('win-screen').classList.remove('hidden');
-                        return;
+                const obj = gameState.levelData[i];
+                if (!obj) continue;
+                if (obj.type === 0) { // Off-screen or empty tile
+                    if (gameState.activeElements.has(obj.id)) {
+                        gameState.activeElements.get(obj.id).remove();
+                        gameState.activeElements.delete(obj.id);
                     }
                     continue;
                 }
-
-                let obj = gameState.levelData[i];
-                if (obj.type === 0) continue;
-
-                let screenX = obj.x - gameState.distance + 150; // +150 is player offset
                 
-                // Draw DOM Element
-                let el = document.createElement('div');
-                el.classList.add('obstacle');
-                el.style.left = screenX + 'px';
-                
-                if (obj.type === 1) { // Spike
-                    el.classList.add('spike');
-                    el.style.bottom = floorHeight + 'px';
-                    // COLLISION (Box overlap)
-                    // Spike rect (approx)
-                    let sRect = { l: screenX + 10, r: screenX + 30, t: 450 - floorHeight - 30, b: 450 - floorHeight }; 
-                    // Manual Rect Check (because generated DOM rects lag one frame)
-                    // Player Y needs to be converted to Screen Y
-                    let pScreenBot = 450 - (floorHeight + gameState.player.y);
-                    let pScreenTop = pScreenBot - 40;
+                let screenX = obj.x - gameState.distance + 150;
+                let el = gameState.activeElements.get(obj.id);
+
+                // A) Spawn/Retrieve Element
+                if (!el) {
+                    el = document.createElement('div');
+                    el.classList.add('obstacle');
+                    el.style.left = screenX + 'px';
+
+                    if (obj.type === 1) el.classList.add('spike');
+                    else if (obj.type === 2) el.classList.add('block');
+                    else if (obj.type === 3) el.classList.add('orb');
+                    else if (obj.type === 4) el.classList.add('portal', 'portal-ship');
+                    else if (obj.type === 5) el.classList.add('portal', 'portal-cube');
                     
-                    if (150 + 30 > screenX + 10 && 150 + 10 < screenX + 30) { // X Overlap
-                        if (gameState.player.y < 35) { // Y Overlap (Height of spike)
-                            die(); return;
-                        }
-                    }
+                    if (obj.type === 3 && el.classList.contains('used')) el.classList.add('used');
 
-                } else if (obj.type === 2) { // Block
-                    el.classList.add('block');
-                    el.style.bottom = floorHeight + 'px';
-                    if (150 + 35 > screenX && 150 + 5 < screenX + 40) {
-                        if (gameState.player.y < 40) { die(); return; }
-                    }
-                } else if (obj.type === 3) { // Orb
-                    el.classList.add('orb');
-                    el.style.bottom = (floorHeight + 100) + 'px';
-                } else if (obj.type === 4) { // Ship Portal
-                    el.classList.add('portal', 'portal-ship');
-                    el.style.bottom = (floorHeight + 50) + 'px';
-                    if (150 > screenX && 150 < screenX + 30) {
-                        gameState.player.mode = 'ship';
-                        playerEl.classList.add('ship');
-                        document.getElementById('ceiling').style.top = '0px';
-                    }
-                } else if (obj.type === 5) { // Cube Portal
-                    el.classList.add('portal', 'portal-cube');
-                    el.style.bottom = (floorHeight + 50) + 'px';
-                    if (150 > screenX && 150 < screenX + 30) {
-                        gameState.player.mode = 'cube';
-                        playerEl.classList.remove('ship');
-                        document.getElementById('ceiling').style.top = '-90px';
-                    }
+                    // Set Y position based on type
+                    let bottomY = floorHeight;
+                    if (obj.type === 3) bottomY += 100; // Orb
+                    else if (obj.type > 3) bottomY += 50; // Portal
+                    el.style.bottom = bottomY + 'px';
+
+                    obsContainer.appendChild(el);
+                    gameState.activeElements.set(obj.id, el);
                 }
 
-                obsContainer.appendChild(el);
+                // B) Move Element & Check Collision
+                el.style.left = screenX + 'px';
+                
+                const isOverlappingX = (150 > screenX - 40 + 35) && (150 < screenX + 40 - 35);
+                
+                if (obj.type === 1) { // Spike
+                    if (isOverlappingX && gameState.player.y < 35) { die(); return; }
+                } else if (obj.type === 2) { // Block
+                    if (isOverlappingX && gameState.player.y < 40) { die(); return; }
+                } else if (obj.type === 4) { // Ship Portal
+                    if (150 > screenX && 150 < screenX + 30) { 
+                        gameState.player.mode = 'ship'; playerEl.classList.add('ship'); document.getElementById('ceiling').style.top = '0px'; 
+                    }
+                } else if (obj.type === 5) { // Cube Portal
+                    if (150 > screenX && 150 < screenX + 30) { 
+                        gameState.player.mode = 'cube'; playerEl.classList.remove('ship'); document.getElementById('ceiling').style.top = '-90px'; 
+                    }
+                }
+                objectsRendered.push(obj.id);
             }
 
-            // Progress Bar
+            // 3. Cleanup Off-Screen Elements
+            gameState.activeElements.forEach((el, id) => {
+                if (objectsRendered.indexOf(id) === -1) {
+                    el.remove();
+                    gameState.activeElements.delete(id);
+                }
+            });
+
+
+            // 4. PROGRESS & WIN
             let totalDist = gameState.levelData.length * 60;
             document.getElementById('progress-bar').style.width = (gameState.distance / totalDist * 100) + "%";
+            
+            if (gameState.distance > totalDist + 500) { 
+                winGame(); return;
+            }
 
             requestAnimationFrame(gameLoop);
         }
-
     </script>
 </body>
 </html>
