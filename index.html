@@ -3,289 +3,525 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vector Velocity - A Custom Jumper</title>
-    
+    <title>Vector Velocity - GD Style</title>
     <style>
-        /* --- CSS for Polished Menu and Game Canvas --- */
-        
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        :root {
+            --primary: #00f2ff;
+            --accent: #ff0055;
+            --bg-dark: #121212;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
         body {
             margin: 0;
+            padding: 0;
+            background-color: #050505;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background: #1a1a2e; /* Dark, space-like background */
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #e94560;
+            height: 100vh;
             overflow: hidden;
+            user-select: none;
         }
 
-        #game-container {
-            width: 800px; /* Standard game width */
-            height: 400px; /* Standard game height */
-            border: 4px solid #16213e;
-            box-shadow: 0 0 40px rgba(233, 69, 96, 0.5);
-            background: #0f3460;
+        /* --- GAME CONTAINER --- */
+        #game-wrapper {
             position: relative;
+            width: 800px;
+            height: 450px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border: 4px solid var(--primary);
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.2);
             overflow: hidden;
+            border-radius: 8px;
         }
 
-        /* Menu Styling */
-        #main-menu {
+        /* --- BACKGROUND PARALLAX (Simplified) --- */
+        .bg-grid {
+            position: absolute;
+            width: 200%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 242, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            animation: scrollBg 10s linear infinite;
+        }
+
+        @keyframes scrollBg {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50px); }
+        }
+
+        /* --- THE PLAYER --- */
+        #player {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #fce38a, #f38181); /* Default Skin */
+            border: 2px solid white;
+            box-sizing: border-box;
+            z-index: 10;
+            bottom: 100px; /* Floor height */
+            left: 100px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            /* Rotation is handled in JS */
+        }
+
+        /* --- THE FLOOR --- */
+        #floor {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100px;
+            background: #0f0f1a;
+            border-top: 4px solid white;
+            z-index: 5;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        }
+
+        #floor-gradient {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #00f2ff 0%, #ff0055 100%);
+            opacity: 0.3;
+        }
+
+        /* --- OBSTACLES (SPIKES) --- */
+        .obstacle {
+            position: absolute;
+            bottom: 100px; /* On top of floor */
+            width: 40px;
+            height: 40px;
+            z-index: 9;
+        }
+
+        /* CSS Triangle for Spike */
+        .spike {
+            width: 0; 
+            height: 0; 
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 40px solid #ff0055;
+            filter: drop-shadow(0 0 5px #ff0055);
+        }
+
+        /* Block Obstacle */
+        .block {
+            width: 40px;
+            height: 40px;
+            background: #00f2ff;
+            border: 2px solid white;
+            box-shadow: 0 0 10px #00f2ff;
+        }
+
+        /* --- UI: MENUS --- */
+        .ui-layer {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            z-index: 100;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(15, 52, 96, 0.95);
-            z-index: 100;
-            transition: opacity 0.5s ease;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s;
         }
 
-        #main-menu.hidden {
+        .hidden {
             opacity: 0;
             pointer-events: none;
         }
 
         h1 {
-            font-size: 3em;
-            margin-bottom: 20px;
+            font-size: 3rem;
+            margin: 0 0 20px 0;
+            text-transform: uppercase;
             letter-spacing: 5px;
-            text-shadow: 0 0 10px #e94560;
+            background: linear-gradient(90deg, #00f2ff, #ff0055);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
         }
 
-        button {
-            padding: 15px 30px;
-            font-size: 1.2em;
-            margin: 10px;
-            background: #e94560;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
+        .btn {
+            padding: 15px 40px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            background: transparent;
+            border: 2px solid var(--primary);
             cursor: pointer;
-            transition: background 0.3s, transform 0.1s;
+            margin-top: 20px;
+            transition: 0.2s;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
         }
 
-        button:hover {
-            background: #ff6a80;
-            transform: translateY(-2px);
+        .btn:hover {
+            background: var(--primary);
+            color: black;
+            box-shadow: 0 0 30px var(--primary);
         }
 
-        /* Player Shape Styling (The initial Cube) */
-        #player {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background-color: #f7b731; /* Bright yellow/orange */
-            left: 50px;
-            bottom: 30px; /* Initial ground position */
-            transition: background-color 0.2s;
-            /* Using a box-shadow for a glow effect */
-            box-shadow: 0 0 15px #f7b731;
-        }
-
-        /* Ground line visualization (Conceptual) */
-        #ground {
-            position: absolute;
-            width: 100%;
-            height: 10px;
-            background: #16213e;
-            bottom: 0;
-        }
-        
-        /* Shape Customization Preview */
-        #shape-selector {
+        /* --- SKIN SELECTOR --- */
+        .skin-container {
             display: flex;
             gap: 15px;
-            margin-top: 20px;
+            margin-bottom: 30px;
         }
-        .shape-option {
-            width: 40px;
-            height: 40px;
-            background: #4e4e5e;
-            border: 3px solid transparent;
+
+        .skin-option {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #555;
             cursor: pointer;
-            transition: border 0.2s, transform 0.2s;
+            transition: transform 0.2s, border-color 0.2s;
         }
-        .shape-option:hover {
-            transform: scale(1.1);
-        }
-        .shape-option.selected {
-            border: 3px solid #e94560;
-            box-shadow: 0 0 10px #e94560;
+        
+        .skin-option:hover { transform: scale(1.1); }
+        .skin-option.selected { border-color: white; box-shadow: 0 0 15px white; transform: scale(1.2); }
+
+        /* Skin Gradients */
+        .skin-1 { background: linear-gradient(45deg, #fce38a, #f38181); }
+        .skin-2 { background: linear-gradient(45deg, #00c6ff, #0072ff); }
+        .skin-3 { background: linear-gradient(45deg, #11998e, #38ef7d); }
+        .skin-4 { background: linear-gradient(45deg, #833ab4, #fd1d1d, #fcb045); }
+
+        /* --- HUD --- */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 50;
+            font-size: 1.2rem;
+            display: none;
         }
 
-        /* Individual Shape Styles for Preview */
-        #shape-cube { border-radius: 0; }
-        #shape-hex { 
-            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); 
-            background: #f7b731;
-        }
-        #shape-star {
-            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-            background: #39e75f;
-        }
-        #shape-triangle {
-            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-            background: #39e7e7;
+        #progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 6px;
+            background: #00f2ff;
+            width: 0%;
+            z-index: 51;
+            box-shadow: 0 0 10px #00f2ff;
         }
 
+        /* --- END CUTSCENE ANIMATION --- */
+        #end-screen h2 {
+            font-size: 2.5rem;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ffd700;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
+    <div id="game-wrapper">
+        <div class="bg-grid"></div>
+        <div id="progress-bar"></div>
         
-        <div id="main-menu">
-            <h1>VECTOR VELOCITY</h1>
-            <p>The Ultimate Rhythm Challenge</p>
-            
-            <h3>Select Your Jumper Shape:</h3>
-            <div id="shape-selector">
-                <div class="shape-option selected" id="shape-cube" data-shape="cube"></div>
-                <div class="shape-option" id="shape-hex" data-shape="hexagon"></div>
-                <div class="shape-option" id="shape-star" data-shape="star"></div>
-                <div class="shape-option" id="shape-triangle" data-shape="triangle"></div>
-            </div>
-
-            <button onclick="startGame()">LAUNCH LEVEL 1: THE ASCENT</button>
-            <p style="font-size: 0.9em;">(Press **Space** or **Click** to Jump)</p>
+        <div id="hud">
+            <span id="level-name">Level 1</span> | Attempt <span id="attempt-count">1</span>
         </div>
 
-        <div id="player"></div>
-        <div id="ground"></div>
+        <div id="game-world">
+            <div id="player"></div>
+            <div id="obstacles-container"></div>
+        </div>
 
-        <div id="end-cutscene" style="display: none;">
+        <div id="floor">
+            <div id="floor-gradient"></div>
+        </div>
+
+        <div id="main-menu" class="ui-layer">
+            <h1>VECTOR VELOCITY</h1>
+            
+            <p style="margin-bottom: 10px; color: #aaa;">SELECT CUBE SKIN</p>
+            <div class="skin-container">
+                <div class="skin-option skin-1 selected" onclick="selectSkin(0)"></div>
+                <div class="skin-option skin-2" onclick="selectSkin(1)"></div>
+                <div class="skin-option skin-3" onclick="selectSkin(2)"></div>
+                <div class="skin-option skin-4" onclick="selectSkin(3)"></div>
             </div>
 
+            <p style="margin-bottom: 5px; color: #aaa;">SELECT LEVEL</p>
+            <select id="level-select" style="padding: 10px; background: #000; color: white; border: 1px solid #555; font-family: 'Orbitron'; margin-bottom: 20px;">
+                <option value="0">Level 1: The Ascent</option>
+                <option value="1">Level 2: Neon Drift</option>
+                <option value="2">Level 3: Cyber Spike</option>
+                <option value="3">Level 4: Velocity</option>
+                <option value="4">Level 5: Midnight</option>
+                <option value="5">Level 6: Gauntlet</option>
+                <option value="6">Level 7: Hyperdrive</option>
+                <option value="7">Level 8: Geometry</option>
+                <option value="8">Level 9: Nightmare</option>
+                <option value="9">Level 10: Zenith</option>
+            </select>
+
+            <button class="btn" onclick="startGame()">PLAY LEVEL</button>
+        </div>
+
+        <div id="death-screen" class="ui-layer hidden">
+            <h1 style="color: #ff0055;">CRASHED</h1>
+            <button class="btn" onclick="retryLevel()">RETRY</button>
+            <button class="btn" onclick="showMenu()" style="border-color: white; font-size: 0.8rem; margin-top: 10px;">MENU</button>
+        </div>
+
+        <div id="end-screen" class="ui-layer hidden">
+            <h2>LEVEL COMPLETE!</h2>
+            <div style="font-size: 4rem;">🏆</div>
+            <button class="btn" onclick="nextLevel()">NEXT LEVEL</button>
+        </div>
     </div>
 
     <script>
-        const player = document.getElementById('player');
-        const menu = document.getElementById('main-menu');
-        const container = document.getElementById('game-container');
-        const groundY = 30; // 30px from the bottom of the container
-        const playerSize = 30;
-        
-        let gameState = {
+        // --- GAME CONFIGURATION ---
+        const gameState = {
             isRunning: false,
-            playerY: groundY,
+            gravity: 0.6,
+            jumpForce: -11.5, // How high the jump is
+            speed: 7,         // How fast obstacles move left
             velocityY: 0,
-            gravity: 1.2,
-            jumpPower: -22,
-            selectedShape: 'cube',
-            levelIndex: 0,
-            levelNames: [
-                "The Ascent", "Rhythm Rift", "Zigzag Sector", "Velocity Vortex", 
-                "Neon Grid", "The Gauntlet", "Hyperlane", "Crystal Collapse", 
-                "Infinity Loop", "Vector's Zenith"
-            ]
+            playerY: 0,
+            rotation: 0,
+            score: 0,
+            currentLevelIndex: 0,
+            attempts: 1
         };
 
-        // --- 1. CORE PLAYER JUMP LOGIC ---
-        
-        function handleJump() {
-            if (gameState.isRunning && gameState.playerY === groundY) {
-                gameState.velocityY = gameState.jumpPower;
+        const skins = [
+            'linear-gradient(45deg, #fce38a, #f38181)',
+            'linear-gradient(45deg, #00c6ff, #0072ff)',
+            'linear-gradient(45deg, #11998e, #38ef7d)',
+            'linear-gradient(45deg, #833ab4, #fd1d1d, #fcb045)'
+        ];
+
+        // --- LEVEL DATA (0 = Empty, 1 = Spike, 2 = Block) ---
+        // Level 1 is handcrafted. The rest are generated for demo purposes.
+        const levels = [
+            { name: "The Ascent", data: [0,0,0,0,1,0,0,1,1,0,0,0,2,0,1,0,0,0,1,1,1,0,0,0,0,2,0,0,0,1,0,0,0,1,0,0,0,0,0,0] },
+            // ... Placeholders for levels 2-10 will be generated in init
+        ];
+
+        // Generate levels 2-10 procedurally
+        for(let i=1; i<10; i++) {
+            let newData = [];
+            for(let j=0; j<50 + (i*5); j++) {
+                // Randomly place spikes (1) or empty space (0)
+                // Harder levels have more spikes
+                newData.push(Math.random() > (0.8 - (i * 0.05)) ? 1 : 0);
+            }
+            levels.push({ name: `Level ${i+1}`, data: newData });
+        }
+
+        // --- DOM ELEMENTS ---
+        const player = document.getElementById('player');
+        const obstacleContainer = document.getElementById('obstacles-container');
+        const mainMenu = document.getElementById('main-menu');
+        const deathScreen = document.getElementById('death-screen');
+        const endScreen = document.getElementById('end-screen');
+        const hud = document.getElementById('hud');
+        const progressBar = document.getElementById('progress-bar');
+        const levelSelect = document.getElementById('level-select');
+
+        // --- CORE FUNCTIONS ---
+
+        function selectSkin(index) {
+            document.querySelectorAll('.skin-option').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.skin-option')[index].classList.add('selected');
+            player.style.background = skins[index];
+        }
+
+        function startGame() {
+            gameState.currentLevelIndex = parseInt(levelSelect.value);
+            resetGame();
+            mainMenu.classList.add('hidden');
+            hud.style.display = 'block';
+            gameState.isRunning = true;
+            document.getElementById('level-name').innerText = levels[gameState.currentLevelIndex].name;
+            gameLoop();
+        }
+
+        function retryLevel() {
+            gameState.attempts++;
+            document.getElementById('attempt-count').innerText = gameState.attempts;
+            deathScreen.classList.add('hidden');
+            resetGame();
+            gameState.isRunning = true;
+            gameLoop();
+        }
+
+        function nextLevel() {
+            endScreen.classList.add('hidden');
+            if(gameState.currentLevelIndex < 9) {
+                gameState.currentLevelIndex++;
+                levelSelect.value = gameState.currentLevelIndex;
+                startGame();
+            } else {
+                showMenu(); // Beat the game
             }
         }
 
-        // --- 2. GAME LOOP (The "Functioning Jump Thingy") ---
-        
+        function showMenu() {
+            deathScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            hud.style.display = 'none';
+            mainMenu.classList.remove('hidden');
+            gameState.isRunning = false;
+        }
+
+        function resetGame() {
+            // Reset Physics
+            gameState.playerY = 0;
+            gameState.velocityY = 0;
+            gameState.rotation = 0;
+            gameState.score = 0;
+            
+            // Visual Reset
+            player.style.bottom = '100px';
+            player.style.transform = 'rotate(0deg)';
+            progressBar.style.width = '0%';
+            
+            // Clear and Rebuild Map
+            obstacleContainer.innerHTML = '';
+            spawnLevel(levels[gameState.currentLevelIndex].data);
+        }
+
+        function spawnLevel(data) {
+            // Each unit in data is spaced 300px apart (approx)
+            data.forEach((type, index) => {
+                if (type === 0) return;
+
+                const obs = document.createElement('div');
+                obs.classList.add('obstacle');
+                // Calculate initial position off screen
+                // Start 600px away, add index * 250px spacing
+                let startX = 600 + (index * 250); 
+                obs.style.left = startX + 'px';
+                
+                if (type === 1) obs.classList.add('spike');
+                if (type === 2) obs.classList.add('block');
+
+                // Store custom data for collision logic
+                obs.dataset.x = startX; 
+                obs.dataset.type = type;
+
+                obstacleContainer.appendChild(obs);
+            });
+        }
+
+        // --- GAME LOOP ---
+
+        function jump() {
+            if (gameState.playerY <= 5) { // Only jump if on ground (tolerance 5px)
+                gameState.velocityY = gameState.jumpForce;
+            }
+        }
+
         function gameLoop() {
             if (!gameState.isRunning) return;
 
-            // Apply Gravity
+            // 1. PHYSICS
             gameState.velocityY += gameState.gravity;
             gameState.playerY -= gameState.velocityY;
 
-            // Check Ground Collision
-            if (gameState.playerY < groundY) {
-                gameState.playerY = groundY;
+            // Ground Collision
+            if (gameState.playerY < 0) {
+                gameState.playerY = 0;
                 gameState.velocityY = 0;
+                
+                // Snap rotation to nearest 90 on ground
+                let rem = gameState.rotation % 90;
+                if(rem !== 0) gameState.rotation += (90 - rem);
+            } else {
+                // Rotate while in air
+                gameState.rotation += 4; 
             }
 
-            // Update Player Position in CSS
-            player.style.bottom = gameState.playerY + 'px';
+            player.style.bottom = (100 + gameState.playerY) + 'px'; // 100 is floor height
+            player.style.transform = `rotate(${gameState.rotation}deg)`;
 
-            // **TODO: Add Obstacle Movement and Collision Check here**
+            // 2. OBSTACLE MOVEMENT & COLLISION
+            const obstacles = document.querySelectorAll('.obstacle');
+            let maxDistance = 0;
+            let activeObstacles = 0;
+
+            obstacles.forEach(obs => {
+                let currentX = parseFloat(obs.dataset.x);
+                currentX -= gameState.speed;
+                obs.dataset.x = currentX;
+                obs.style.left = currentX + 'px';
+
+                // Cleanup off-screen
+                if (currentX < -100) {
+                    obs.remove(); 
+                } else {
+                    activeObstacles++;
+                }
+                
+                // Simple AABB Collision
+                // Player is at X: 100, Width: 40. 
+                // Hitbox X range: 105 to 135 (generous)
+                if (currentX > 60 && currentX < 140) {
+                    // Check Y collision
+                    if (gameState.playerY < 35) { // If player is low enough to hit
+                         crash();
+                    }
+                }
+            });
+
+            // 3. LEVEL PROGRESS
+            // Simple progress metric: Time/Distance
+            gameState.score++;
+            const levelLength = levels[gameState.currentLevelIndex].data.length * 40; // Approx length
+            let progress = Math.min(100, (gameState.score / levelLength) * 100);
+            progressBar.style.width = progress + '%';
+
+            // Win Condition
+            if (activeObstacles === 0 && gameState.score > 100) {
+                winLevel();
+                return;
+            }
 
             requestAnimationFrame(gameLoop);
         }
 
-        // --- 3. GAME STATE MANAGEMENT ---
-
-        function startGame() {
-            menu.classList.add('hidden');
-            gameState.isRunning = true;
-            gameState.playerY = groundY;
-            gameState.velocityY = 0;
-            
-            // Update the player shape to the selected type
-            applyShape(gameState.selectedShape);
-            
-            // Start the physics simulation
-            gameLoop();
-        }
-        
-        // --- 4. SHAPE CUSTOMIZATION ---
-
-        function applyShape(shape) {
-            player.className = ''; // Reset existing classes
-            player.style.backgroundColor = ''; // Reset background
-            player.style.clipPath = ''; // Reset shape
-
-            if (shape === 'cube') {
-                player.style.backgroundColor = '#f7b731';
-            } else if (shape === 'hexagon') {
-                player.style.backgroundColor = '#f7b731';
-                player.style.clipPath = 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
-            } else if (shape === 'star') {
-                player.style.backgroundColor = '#39e75f';
-                player.style.clipPath = 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
-            } else if (shape === 'triangle') {
-                player.style.backgroundColor = '#39e7e7';
-                player.style.clipPath = 'polygon(50% 0%, 100% 100%, 0% 100%)';
-            }
-            gameState.selectedShape = shape;
-        }
-
-        // Event listener for shape selection on the menu
-        document.querySelectorAll('.shape-option').forEach(el => {
-            el.addEventListener('click', function() {
-                // Deselect all
-                document.querySelectorAll('.shape-option').forEach(opt => opt.classList.remove('selected'));
-                // Select clicked
-                this.classList.add('selected');
-                gameState.selectedShape = this.dataset.shape;
-            });
-        });
-
-
-        // --- 5. INPUT HANDLER ---
-        
-        // Listen for spacebar press or click/touch anywhere on the game container
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault(); // Prevent scrolling
-                handleJump();
-            }
-        });
-
-        container.addEventListener('click', handleJump);
-
-        // **TODO: Implement the endCutscene() function here**
-        /*
-        function endCutscene() {
+        function crash() {
             gameState.isRunning = false;
-            // Display the 'end-cutscene' div with the custom animation
-            // Show the next level button, etc.
+            // Explosion effect could go here
+            deathScreen.classList.remove('hidden');
         }
-        */
+
+        function winLevel() {
+            gameState.isRunning = false;
+            endScreen.classList.remove('hidden');
+        }
+
+        // --- CONTROLS ---
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                if (gameState.isRunning) jump();
+            }
+        });
+
+        document.addEventListener('mousedown', () => {
+             if (gameState.isRunning) jump();
+        });
 
     </script>
 </body>
