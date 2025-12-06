@@ -6,10 +6,9 @@
     <title>Vector Velocity: Arcade Cabinet</title>
     <style>
         /* --- ARCADE GLOBAL STYLES --- */
-        /* Using a system font for blockiness since we cannot rely on external pixel fonts */
         :root {
-            --arcade-primary: #ff0077; /* Neon Magenta */
-            --arcade-secondary: #00ffff; /* Cyan */
+            --arcade-primary: #ff0077;
+            --arcade-secondary: #00ffff;
             --arcade-bg: #111111;
             --arcade-text: #f0f0f0;
             --danger: #ff0055;
@@ -18,7 +17,7 @@
 
         body {
             margin: 0; background-color: #050505; color: var(--arcade-text);
-            font-family: 'Arial Black', sans-serif; /* Blocky Arcade Font */
+            font-family: 'Arial Black', sans-serif;
             display: flex; justify-content: center; align-items: center;
             height: 100vh; overflow: hidden; user-select: none;
             text-shadow: 0 0 5px var(--arcade-text);
@@ -50,59 +49,57 @@
         }
         @keyframes scrollBg { from { transform: translateX(0); } to { transform: translateX(-60px); } }
 
-        #player { border: 4px solid var(--arcade-text); z-index: 20; }
+        #player { border: 4px solid var(--arcade-text); z-index: 20; position: absolute; width: 40px; height: 40px; box-sizing: border-box; left: 150px; transition: height 0.1s, margin 0.1s; }
         #player.ship { border-radius: 0 50% 50% 0; height: 25px; margin-bottom: 7px; }
 
         #floor, #ceiling {
-            background: #222222; border-top: 4px solid var(--arcade-primary); z-index: 10;
+            position: absolute; width: 100%; height: 90px; background: #222222; z-index: 10;
+            border-top: 4px solid var(--arcade-primary); bottom: 0;
         }
-        #ceiling { border-bottom: 4px solid var(--arcade-primary); border-top: none; }
+        #ceiling { top: -90px; bottom: auto; border-bottom: 4px solid var(--arcade-primary); border-top: none; transition: top 0.3s; }
 
         /* Obstacles */
-        .spike::after { border-bottom: 40px solid var(--danger); filter: drop-shadow(0 0 10px var(--danger)); }
-        .orb { border: 4px solid var(--orb); box-shadow: 0 0 20px var(--orb); }
-        .orb.used { opacity: 0.2 !important; }
+        .obstacle { position: absolute; z-index: 15; transition: left 0.01s linear, opacity 0.1s; }
+        .spike { width: 40px; height: 40px; }
+        .spike::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 0;
+            border-left: 20px solid transparent; border-right: 20px solid transparent;
+            border-bottom: 40px solid var(--danger); filter: drop-shadow(0 0 10px var(--danger));
+        }
+        .orb { width: 36px; height: 36px; background: radial-gradient(circle, var(--orb) 40%, transparent 70%); border: 4px solid var(--orb); border-radius: 50%; box-shadow: 0 0 20px var(--orb); animation: pulse 0.5s infinite alternate; }
+        .orb.used { opacity: 0.2 !important; animation: none; cursor: default; }
 
         /* Portals (Visibility Fix) */
-        .portal { z-index: 50; border: 4px solid white; opacity: 1; }
+        .portal { width: 30px; height: 90px; border-radius: 10px; z-index: 50; border: 4px solid white; opacity: 1; }
         .portal-ship { background: #d900ff; color: #d900ff; box-shadow: 0 0 25px #d900ff; }
         .portal-cube { background: #00ff6a; color: #00ff6a; box-shadow: 0 0 25px #00ff6a; }
 
 
         /* --- UI STYLES --- */
-        .ui-layer { background: rgba(17, 17, 17, 0.95); }
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(17, 17, 17, 0.95); backdrop-filter: blur(5px); transition: opacity 0.3s; }
+        .hidden { display: none !important; }
+
         h1 { font-size: 3.5rem; color: var(--arcade-primary); letter-spacing: 8px; text-shadow: 0 0 15px var(--arcade-primary); }
         h2 { font-size: 1.2rem; color: var(--arcade-secondary); margin: 5px 0 25px 0; text-shadow: 0 0 10px var(--arcade-secondary); }
 
         /* Blocky Buttons */
         .btn, select {
-            border-radius: 0; /* Remove rounded corners */
+            border-radius: 0; font-family: 'Arial Black', sans-serif;
             box-shadow: 0 0 15px var(--danger);
             border: 4px solid var(--arcade-text);
-            padding: 12px 40px;
+            padding: 12px 40px; cursor: pointer;
         }
         .btn:hover { background: var(--arcade-text); color: var(--arcade-primary); box-shadow: 0 0 30px var(--arcade-text); transform: scale(1.02); }
-
-        /* Skin Selector (Adjusted for arcade look) */
-        .skin-opt { border: 3px solid var(--arcade-text); }
-        .skin-opt.selected { border-color: var(--arcade-primary); box-shadow: 0 0 15px var(--arcade-primary); }
-
-        /* HUD & Progress */
-        #hud { color: var(--arcade-secondary); text-shadow: 0 0 10px var(--arcade-secondary); }
-        #progress-bar { background: var(--arcade-primary); height: 8px; box-shadow: 0 0 15px var(--arcade-primary); }
+        
+        /* Pause Buttons */
+        .pause-btn { margin: 10px 0; padding: 15px 70px; font-size: 1.1rem; background: transparent; transition: 0.3s; }
+        #pause-menu .pause-btn:nth-child(2) { border-color: #ff0077; box-shadow: 0 0 15px #ff0077, 0 0 30px #ff0077; color: #fff; text-shadow: 0 0 5px #ff0077; }
+        #pause-menu .pause-btn:nth-child(3) { border-color: #00ff77; box-shadow: 0 0 15px #00ff77, 0 0 30px #00ff77; color: #fff; text-shadow: 0 0 5px #00ff77; }
+        .pause-btn:hover { transform: scale(1.05); background: rgba(255,255,255,0.1); }
 
         /* --- LEADERBOARD STYLES --- */
-        #leaderboard-section {
-            width: 80%; max-width: 400px; margin-top: 30px;
-            background: rgba(0, 0, 0, 0.4); border: 2px solid var(--arcade-secondary);
-            padding: 15px; box-shadow: inset 0 0 10px var(--arcade-secondary);
-        }
-        #leaderboard-section h3 {
-            color: var(--arcade-secondary); margin-top: 0; margin-bottom: 10px; font-size: 1.2rem;
-            text-shadow: 0 0 5px var(--arcade-secondary);
-            border-bottom: 1px dashed var(--arcade-secondary);
-            padding-bottom: 5px;
-        }
+        #leaderboard-section { width: 80%; max-width: 400px; margin-top: 30px; background: rgba(0, 0, 0, 0.4); border: 2px solid var(--arcade-secondary); padding: 15px; box-shadow: inset 0 0 10px var(--arcade-secondary); }
+        #leaderboard-section h3 { color: var(--arcade-secondary); margin-top: 0; margin-bottom: 10px; font-size: 1.2rem; text-shadow: 0 0 5px var(--arcade-secondary); border-bottom: 1px dashed var(--arcade-secondary); padding-bottom: 5px; }
         .score-entry { display: flex; justify-content: space-between; font-size: 1rem; margin-bottom: 5px; }
         .rank { color: gold; font-weight: bold; }
         .time { color: var(--arcade-primary); }
@@ -239,34 +236,31 @@
             distance: 0,
             speed: 8,
             player: { y: 0, vy: 0, rot: 0, mode: 'cube' },
-            gravity: 0.85, // Decreased for faster landing
-            jumpPower: 14.8, // Increased for higher jump
+            gravity: 0.85,
+            jumpPower: 14.8,
             currentSkin: 'linear-gradient(45deg, #fce38a, #f38181)',
             activeElements: new Map(),
             currentLevelIndex: 0,
-            startTime: 0, // For time tracking
-            isPaused: false
+            startTime: 0,
+            isPaused: false,
+            jumpBuffer: 0, // NEW: Tracks jump input buffer time (in frames)
+            maxJumpBuffer: 6 // Approx. 100ms at 60fps
         };
 
-        // --- LEADERBOARD FUNCTIONS ---
+        // --- LEADERBOARD FUNCTIONS (Unchanged) ---
 
         function loadScores() {
             const scores = JSON.parse(localStorage.getItem('vv_leaderboard')) || [];
-            // Sort by time (fastest first)
             scores.sort((a, b) => a.time - b.time);
             return scores;
         }
 
         function saveScore(level, time) {
-            if (level !== 10) return; // Only track Zenith scores
-
+            if (level !== 10) return;
             let scores = loadScores();
             scores.push({ level, time, date: new Date().toLocaleDateString() });
-
-            // Keep top 5 scores
             scores.sort((a, b) => a.time - b.time);
             scores = scores.slice(0, 5); 
-
             localStorage.setItem('vv_leaderboard', JSON.stringify(scores));
         }
 
@@ -282,7 +276,7 @@
             let html = '';
             scores.forEach((score, index) => {
                 const minutes = Math.floor(score.time / 60);
-                const seconds = (score.time % 60).toFixed(2);
+                const seconds = (score.time % 60).toFixed(2).padStart(5, '0');
                 html += `
                     <div class="score-entry">
                         <span class="rank">${index + 1}.</span>
@@ -294,8 +288,36 @@
             content.innerHTML = html;
         }
 
+        // --- GAME FLOW (Unchanged) ---
 
-        // --- GAME FLOW ---
+        function setSkin(el) {
+            document.querySelectorAll('.skin-opt').forEach(d => d.classList.remove('selected'));
+            el.classList.add('selected');
+            gameState.currentSkin = el.style.background;
+            playerEl.style.background = gameState.currentSkin;
+        }
+
+        function generateLevel(levelNum) {
+            let data = [];
+            let length = 150 + (levelNum * 20); 
+            let difficulty = levelNum / 10;
+            let safeCount = 0; 
+            
+            for (let i = 0; i < length; i++) {
+                let obj = { id: i, type: 0, x: i * 60, used: false };
+                if (i < 20 || safeCount > 0) { data.push(obj); safeCount--; continue; }
+
+                let r = Math.random();
+                const minGap = (levelNum >= 9) ? 3 : 4; 
+
+                if (r < (0.1 + difficulty * 0.4)) { obj.type = 1; safeCount = minGap; } 
+                else if (r > 0.96 && levelNum > 3) { obj.type = 3; safeCount = minGap; } 
+                else if (i === 60 && levelNum > 1) { obj.type = 4; } 
+                else if (i === 120 && levelNum > 1) { obj.type = 5; }
+                data.push(obj);
+            }
+            return data;
+        }
 
         function startGame() {
             const levelVal = parseInt(document.getElementById('level-select').value);
@@ -303,13 +325,12 @@
             
             AudioEngine.stop(); AudioEngine.init(levelVal);
 
-            // Reset State
             gameState.active = true; gameState.distance = 0;
             gameState.player = { y: 0, vy: 0, rot: 0, mode: 'cube' };
             gameState.levelData = generateLevel(levelVal);
-            gameState.startTime = AudioEngine.ctx.currentTime; // Start timing
+            gameState.startTime = AudioEngine.ctx.currentTime; 
+            gameState.jumpBuffer = 0; // Reset buffer on start
 
-            // UI Reset
             document.getElementById('main-menu').classList.add('hidden');
             document.getElementById('death-screen').classList.add('hidden');
             document.getElementById('end-cutscene').classList.add('hidden');
@@ -339,12 +360,10 @@
             document.getElementById('pause-menu').classList.add('hidden');
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('main-menu').classList.remove('hidden');
-            renderLeaderboard(); // Display scores on menu return
+            renderLeaderboard();
         }
         
-        // Load scores when the page first loads
         window.onload = renderLeaderboard;
-
 
         function togglePause(shouldPause) {
             gameState.active = !shouldPause;
@@ -383,17 +402,15 @@
             document.getElementById('end-cutscene').classList.remove('hidden');
         }
 
-        // --- INPUT & ORBS (Updated Jump Logic) ---
+        // --- INPUT & ORBS (Updated for Jump Buffer) ---
         let inputHeld = false;
         
         function handleInput(down) {
             inputHeld = down;
             if (down && gameState.active) {
                 if (gameState.player.mode === 'cube') {
-                    // JUMP FIX: checking y <= 1.0 (instead of 0.5) makes ground jump detection slightly more forgiving
-                    if (gameState.player.y <= 1.0) { 
-                        gameState.player.vy = gameState.jumpPower;
-                    }
+                    // Set jump buffer on key press
+                    gameState.jumpBuffer = gameState.maxJumpBuffer;
                     checkOrbs();
                 }
             }
@@ -405,38 +422,9 @@
             else if((e.code==='Escape' || e.code==='KeyP') && gameState.isPaused) { togglePause(false); }
         });
         window.addEventListener('keyup', (e) => { if(e.code==='Space') handleInput(false) });
-        
-        // Simplified listeners for mouse click (jump/unpause if applicable)
         window.addEventListener('mousedown', () => { if(gameState.active) handleInput(true); });
         window.addEventListener('mouseup', () => { if(gameState.active) handleInput(false); });
-        
-        // --- GameLoop and Rendering (Unchanged logic structure, only physics/state values changed) ---
-        function generateLevel(levelNum) {
-            let data = [];
-            let length = 150 + (levelNum * 20); 
-            let difficulty = levelNum / 10;
-            let safeCount = 0; 
-            
-            for (let i = 0; i < length; i++) {
-                let obj = { id: i, type: 0, x: i * 60, used: false };
-                if (i < 20 || safeCount > 0) { data.push(obj); safeCount--; continue; }
 
-                let r = Math.random();
-                const minGap = (levelNum >= 9) ? 3 : 4; 
-
-                if (r < (0.1 + difficulty * 0.4)) {
-                    obj.type = 1; safeCount = minGap;
-                } else if (r > 0.96 && levelNum > 3) {
-                    obj.type = 3; safeCount = minGap;
-                } else if (i === 60 && levelNum > 1) {
-                    obj.type = 4;
-                } else if (i === 120 && levelNum > 1) {
-                    obj.type = 5;
-                }
-                data.push(obj);
-            }
-            return data;
-        }
 
         function checkOrbs() {
             const orbs = document.querySelectorAll('.orb');
@@ -444,6 +432,7 @@
             
             orbs.forEach(orbEl => {
                 if (orbEl.classList.contains('used')) return;
+
                 const oRect = orbEl.getBoundingClientRect();
                 const dx = (pRect.left + pRect.width/2) - (oRect.left + oRect.width/2);
                 const dy = (pRect.top + pRect.height/2) - (oRect.top + oRect.height/2);
@@ -459,8 +448,20 @@
         function gameLoop() {
             if (!gameState.active) return;
 
-            // 1. PHYSICS
+            // 1. JUMP BUFFER DECREMENT
+            if (gameState.jumpBuffer > 0) {
+                gameState.jumpBuffer--;
+            }
+
+            // 2. PHYSICS
             if (gameState.player.mode === 'cube') {
+                
+                // JUMP EXECUTION: Execute jump if buffered AND player is grounded
+                if (gameState.jumpBuffer > 0 && gameState.player.y <= 1.0) {
+                    gameState.player.vy = gameState.jumpPower;
+                    gameState.jumpBuffer = 0; // Consume the buffer
+                }
+
                 gameState.player.vy -= gameState.gravity; gameState.player.y += gameState.player.vy;
                 if (gameState.player.y <= 0) { gameState.player.y = 0; gameState.player.vy = 0; gameState.player.rot += (90 - (gameState.player.rot % 90)) * 0.2; } else { gameState.player.rot += 6; }
             } else { 
@@ -473,7 +474,7 @@
             playerEl.style.bottom = (floorHeight + gameState.player.y) + 'px';
             playerEl.style.transform = `rotate(${gameState.player.rot}deg)`;
 
-            // 2. WORLD MOVEMENT & COLLISION
+            // 3. WORLD MOVEMENT & COLLISION (Unchanged)
             gameState.distance += gameState.speed;
             
             let startIdx = Math.floor(gameState.distance / 60);
@@ -490,7 +491,6 @@
                 let screenX = obj.x - gameState.distance + 150;
                 let el = gameState.activeElements.get(obj.id);
 
-                // A) Spawn/Retrieve Element
                 if (!el) {
                     el = document.createElement('div'); el.classList.add('obstacle'); el.style.left = screenX + 'px';
                     if (obj.type === 1) el.classList.add('spike');
@@ -505,7 +505,6 @@
                     obsContainer.appendChild(el); gameState.activeElements.set(obj.id, el);
                 }
 
-                // B) Move Element & Check Collision
                 el.style.left = screenX + 'px';
                 
                 const isOverlappingX = (150 > screenX - 40 + 35) && (150 < screenX + 40 - 35);
@@ -520,7 +519,7 @@
                 objectsRendered.push(obj.id);
             }
 
-            // 3. Cleanup Off-Screen Elements
+            // 4. Cleanup Off-Screen Elements
             gameState.activeElements.forEach((el, id) => {
                 if (objectsRendered.indexOf(id) === -1) {
                     el.remove();
@@ -528,7 +527,8 @@
                 }
             });
 
-            // 4. PROGRESS & WIN
+
+            // 5. PROGRESS & WIN
             let totalDist = gameState.levelData.length * 60;
             document.getElementById('progress-bar').style.width = (gameState.distance / totalDist * 100) + "%";
             
