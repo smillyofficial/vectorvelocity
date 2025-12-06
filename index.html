@@ -3,111 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vector Velocity: Optimized Zenith</title>
+    <title>Vector Velocity: Arcade Cabinet</title>
     <style>
-        /* --- GLOBAL STYLES & UI FONT --- */
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-
+        /* --- ARCADE GLOBAL STYLES --- */
+        /* Using a system font for blockiness since we cannot rely on external pixel fonts */
         :root {
-            --primary: #00f2ff;
+            --arcade-primary: #ff0077; /* Neon Magenta */
+            --arcade-secondary: #00ffff; /* Cyan */
+            --arcade-bg: #111111;
+            --arcade-text: #f0f0f0;
             --danger: #ff0055;
             --orb: #ffeb3b;
-            --zenith-gold: #ffd700;
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.2);
         }
 
         body {
-            margin: 0; background-color: #050505; color: white;
-            font-family: 'Orbitron', sans-serif; display: flex;
-            justify-content: center; align-items: center;
+            margin: 0; background-color: #050505; color: var(--arcade-text);
+            font-family: 'Arial Black', sans-serif; /* Blocky Arcade Font */
+            display: flex; justify-content: center; align-items: center;
             height: 100vh; overflow: hidden; user-select: none;
+            text-shadow: 0 0 5px var(--arcade-text);
         }
 
         #game-wrapper {
             position: relative; width: 800px; height: 450px;
-            background: linear-gradient(180deg, #1a1a2e 0%, #000000 100%);
-            border: 4px solid var(--primary); box-shadow: 0 0 70px rgba(0, 242, 255, 0.3);
-            overflow: hidden; border-radius: 8px;
+            background: var(--arcade-bg);
+            border: 8px solid var(--arcade-secondary);
+            box-shadow: 0 0 100px var(--arcade-secondary), inset 0 0 50px var(--arcade-secondary);
+            overflow: hidden; border-radius: 4px;
+        }
+
+        /* Scanline Effect (Retro CRT Look) */
+        #game-wrapper::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 1000; pointer-events: none; background-size: 100% 4px, 3px 100%;
+            opacity: 0.5;
         }
 
         /* --- BACKGROUND & ENTITIES --- */
         .bg-grid {
             position: absolute; width: 200%; height: 100%;
-            background-image: linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
+            background-image: linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
             background-size: 60px 60px; animation: scrollBg 5s linear infinite; z-index: 0;
         }
         @keyframes scrollBg { from { transform: translateX(0); } to { transform: translateX(-60px); } }
 
-        #player { position: absolute; width: 40px; height: 40px; border: 2px solid white; box-sizing: border-box; z-index: 20; left: 150px; transition: height 0.1s, margin 0.1s; }
+        #player { border: 4px solid var(--arcade-text); z-index: 20; }
         #player.ship { border-radius: 0 50% 50% 0; height: 25px; margin-bottom: 7px; }
 
         #floor, #ceiling {
-            position: absolute; width: 100%; height: 90px; background: #0f0f1a; z-index: 10;
-            border-top: 3px solid white; bottom: 0;
+            background: #222222; border-top: 4px solid var(--arcade-primary); z-index: 10;
         }
-        #ceiling { top: -90px; bottom: auto; border-bottom: 3px solid white; border-top: none; transition: top 0.3s; }
+        #ceiling { border-bottom: 4px solid var(--arcade-primary); border-top: none; }
 
-        .obstacle { position: absolute; z-index: 15; transition: left 0.01s linear, opacity 0.1s; } /* Optimization: Transition on left is required for smooth movement */
-        .spike { width: 40px; height: 40px; }
-        .spike::after {
-            content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 0;
-            border-left: 20px solid transparent; border-right: 20px solid transparent;
-            border-bottom: 40px solid var(--danger); filter: drop-shadow(0 0 5px var(--danger));
-        }
-        .orb { width: 36px; height: 36px; background: radial-gradient(circle, var(--orb) 40%, transparent 70%); border: 3px solid var(--orb); border-radius: 50%; box-shadow: 0 0 15px var(--orb); animation: pulse 0.5s infinite alternate; }
-        .orb.used { opacity: 0.3 !important; animation: none; cursor: default; }
+        /* Obstacles */
+        .spike::after { border-bottom: 40px solid var(--danger); filter: drop-shadow(0 0 10px var(--danger)); }
+        .orb { border: 4px solid var(--orb); box-shadow: 0 0 20px var(--orb); }
+        .orb.used { opacity: 0.2 !important; }
+
+        /* Portals (Visibility Fix) */
+        .portal { z-index: 50; border: 4px solid white; opacity: 1; }
+        .portal-ship { background: #d900ff; color: #d900ff; box-shadow: 0 0 25px #d900ff; }
+        .portal-cube { background: #00ff6a; color: #00ff6a; box-shadow: 0 0 25px #00ff6a; }
+
 
         /* --- UI STYLES --- */
-        .ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); transition: opacity 0.3s;
-        }
-        .hidden { display: none !important; }
+        .ui-layer { background: rgba(17, 17, 17, 0.95); }
+        h1 { font-size: 3.5rem; color: var(--arcade-primary); letter-spacing: 8px; text-shadow: 0 0 15px var(--arcade-primary); }
+        h2 { font-size: 1.2rem; color: var(--arcade-secondary); margin: 5px 0 25px 0; text-shadow: 0 0 10px var(--arcade-secondary); }
 
-        h1 { margin: 0; font-size: 2.8rem; color: var(--primary); text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 10px var(--primary); }
-        .btn {
-            padding: 15px 50px; font-family: 'Orbitron'; font-size: 1.2rem; font-weight: bold;
-            color: white; background: var(--danger); border: none; cursor: pointer; transition: 0.2s; border-radius: 5px;
-            box-shadow: 0 0 20px var(--danger); text-shadow: 0 0 5px black;
+        /* Blocky Buttons */
+        .btn, select {
+            border-radius: 0; /* Remove rounded corners */
+            box-shadow: 0 0 15px var(--danger);
+            border: 4px solid var(--arcade-text);
+            padding: 12px 40px;
         }
+        .btn:hover { background: var(--arcade-text); color: var(--arcade-primary); box-shadow: 0 0 30px var(--arcade-text); transform: scale(1.02); }
 
-        /* --- PAUSE MENU SPECIFIC STYLES --- */
-        #pause-menu {
-            /* Reset to Glassmorphism appearance */
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-        }
-        .pause-btn {
-            margin: 10px 0; padding: 15px 70px; font-size: 1.1rem;
-            background: transparent; border: 2px solid white;
-            box-shadow: 0 0 10px white;
-            transition: 0.3s;
-        }
+        /* Skin Selector (Adjusted for arcade look) */
+        .skin-opt { border: 3px solid var(--arcade-text); }
+        .skin-opt.selected { border-color: var(--arcade-primary); box-shadow: 0 0 15px var(--arcade-primary); }
 
-        /* RGB GLOW EFFECT */
-        #pause-menu .pause-btn:nth-child(2) {
-            /* Restart (RGB Glow) */
-            border-color: #ff0077;
-            box-shadow: 0 0 15px #ff0077, 0 0 30px #ff0077;
-            color: #fff;
-            text-shadow: 0 0 5px #ff0077;
-        }
-        #pause-menu .pause-btn:nth-child(3) {
-            /* Main Menu (RGB Glow) */
-            border-color: #00ff77;
-            box-shadow: 0 0 15px #00ff77, 0 0 30px #00ff77;
-            color: #fff;
-            text-shadow: 0 0 5px #00ff77;
-        }
-        .pause-btn:hover {
-            transform: scale(1.05);
-            background: rgba(255,255,255,0.1);
-        }
+        /* HUD & Progress */
+        #hud { color: var(--arcade-secondary); text-shadow: 0 0 10px var(--arcade-secondary); }
+        #progress-bar { background: var(--arcade-primary); height: 8px; box-shadow: 0 0 15px var(--arcade-primary); }
 
+        /* --- LEADERBOARD STYLES --- */
+        #leaderboard-section {
+            width: 80%; max-width: 400px; margin-top: 30px;
+            background: rgba(0, 0, 0, 0.4); border: 2px solid var(--arcade-secondary);
+            padding: 15px; box-shadow: inset 0 0 10px var(--arcade-secondary);
+        }
+        #leaderboard-section h3 {
+            color: var(--arcade-secondary); margin-top: 0; margin-bottom: 10px; font-size: 1.2rem;
+            text-shadow: 0 0 5px var(--arcade-secondary);
+            border-bottom: 1px dashed var(--arcade-secondary);
+            padding-bottom: 5px;
+        }
+        .score-entry { display: flex; justify-content: space-between; font-size: 1rem; margin-bottom: 5px; }
+        .rank { color: gold; font-weight: bold; }
+        .time { color: var(--arcade-primary); }
     </style>
 </head>
 <body>
@@ -126,8 +124,8 @@
         <div id="ceiling"></div>
 
         <div id="main-menu" class="ui-layer">
-            <h1>VECTOR VELOCITY</h1>
-            <h2>ZENITH EDITION</h2>
+            <h1>ARCADE VECTOR</h1>
+            <h2>Insert Coin to Play</h2>
 
             <div style="margin-bottom: 5px; color: #888; font-size: 0.8rem;">SELECT CUBE SKIN</div>
             <div class="skin-container">
@@ -151,10 +149,15 @@
             </select>
 
             <button class="btn" onclick="startGame()">LAUNCH LEVEL</button>
+            
+            <div id="leaderboard-section">
+                <h3>ZENITH HIGH SCORES</h3>
+                <div id="leaderboard-content">No records yet.</div>
+            </div>
         </div>
 
         <div id="pause-menu" class="ui-layer hidden">
-            <h1 style="font-size: 3rem; margin-bottom: 40px; color: white; text-shadow: 0 0 20px white;">PAUSED</h1>
+            <h1 style="font-size: 3rem; margin-bottom: 40px; color: var(--arcade-text); text-shadow: 0 0 15px var(--arcade-text);">PAUSED</h1>
             <button class="pause-btn" onclick="togglePause(false)">RESUME</button>
             <button class="pause-btn" onclick="restartLevel()">RESTART</button>
             <button class="pause-btn" onclick="showMenu()">MAIN MENU</button>
@@ -164,18 +167,19 @@
             <h1 style="color: var(--danger);">CRASHED</h1>
             <p id="death-quote" style="color: #aaa; margin: 20px;">0% Complete</p>
             <button class="btn" onclick="restartLevel()">RETRY</button>
-            <button class="btn" style="background: transparent; border: 1px solid var(--glass-border); color: white; margin-top: 10px; font-size: 0.8rem; box-shadow: none;" onclick="showMenu()">RETURN TO MENU</button>
+            <button class="btn" style="background: transparent; border: 4px solid var(--arcade-text); color: white; margin-top: 10px; font-size: 0.8rem; box-shadow: none;" onclick="showMenu()">MAIN MENU</button>
         </div>
 
         <div id="end-cutscene" class="ui-layer hidden">
             <div id="player-trophy"></div>
             <div id="zenith-message">ZENITH REACHED!</div>
-            <button class="btn" onclick="showMenu()" style="background: var(--zenith-gold); color: black; box-shadow: 0 0 30px var(--zenith-gold);">VICTORY MENU</button>
+            <p id="final-time"></p>
+            <button class="btn" onclick="showMenu()" style="background: var(--arcade-primary); color: black; box-shadow: 0 0 30px var(--arcade-primary);">VICTORY MENU</button>
         </div>
     </div>
 
     <script>
-        // --- AUDIO ENGINE ---
+        // --- AUDIO ENGINE (Unchanged for stability) ---
         const AudioEngine = {
             ctx: null, isPlaying: false, nextNoteTime: 0, noteIndex: 0, tempo: 120,
             delay: null, feedback: null, 
@@ -235,58 +239,61 @@
             distance: 0,
             speed: 8,
             player: { y: 0, vy: 0, rot: 0, mode: 'cube' },
-            gravity: 0.9,
-            jumpPower: 14.5,
+            gravity: 0.85, // Decreased for faster landing
+            jumpPower: 14.8, // Increased for higher jump
             currentSkin: 'linear-gradient(45deg, #fce38a, #f38181)',
-            activeElements: new Map(), // CRITICAL FIX: Tracks spawned DOM elements
-            currentLevelIndex: 0
+            activeElements: new Map(),
+            currentLevelIndex: 0,
+            startTime: 0, // For time tracking
+            isPaused: false
         };
 
-        // --- UI & CUSTOMIZATION ---
+        // --- LEADERBOARD FUNCTIONS ---
 
-        function setSkin(el) {
-            document.querySelectorAll('.skin-opt').forEach(d => d.classList.remove('selected'));
-            el.classList.add('selected');
-            gameState.currentSkin = el.style.background;
-            playerEl.style.background = gameState.currentSkin;
+        function loadScores() {
+            const scores = JSON.parse(localStorage.getItem('vv_leaderboard')) || [];
+            // Sort by time (fastest first)
+            scores.sort((a, b) => a.time - b.time);
+            return scores;
         }
 
-        function generateLevel(levelNum) {
-            let data = [];
-            let length = 150 + (levelNum * 20); 
-            let difficulty = levelNum / 10;
-            let safeCount = 0; 
+        function saveScore(level, time) {
+            if (level !== 10) return; // Only track Zenith scores
+
+            let scores = loadScores();
+            scores.push({ level, time, date: new Date().toLocaleDateString() });
+
+            // Keep top 5 scores
+            scores.sort((a, b) => a.time - b.time);
+            scores = scores.slice(0, 5); 
+
+            localStorage.setItem('vv_leaderboard', JSON.stringify(scores));
+        }
+
+        function renderLeaderboard() {
+            const scores = loadScores();
+            const content = document.getElementById('leaderboard-content');
             
-            for (let i = 0; i < length; i++) {
-                // Initialize object data with a unique ID and 'used' state for orbs
-                let obj = { id: i, type: 0, x: i * 60, used: false };
-
-                if (i < 20 || safeCount > 0) {
-                    data.push(obj);
-                    safeCount--;
-                    continue;
-                }
-
-                let r = Math.random();
-                // Crucial adjustment for tight jumps (3 blocks = 180px gap)
-                const minGap = (levelNum >= 9) ? 3 : 4; 
-
-                if (r < (0.1 + difficulty * 0.4)) {
-                    obj.type = 1; // Spike
-                    safeCount = minGap;
-                } else if (r > 0.96 && levelNum > 3) {
-                    obj.type = 3; // Orb
-                    safeCount = minGap;
-                } else if (i === 60 && levelNum > 1) {
-                    obj.type = 4; // Ship Portal
-                } else if (i === 120 && levelNum > 1) {
-                    obj.type = 5; // Cube Portal
-                }
-
-                data.push(obj);
+            if (scores.length === 0) {
+                content.innerHTML = '<div style="text-align: center; color: #aaa;">No records yet. Be the first!</div>';
+                return;
             }
-            return data;
+
+            let html = '';
+            scores.forEach((score, index) => {
+                const minutes = Math.floor(score.time / 60);
+                const seconds = (score.time % 60).toFixed(2);
+                html += `
+                    <div class="score-entry">
+                        <span class="rank">${index + 1}.</span>
+                        <span>Level ${score.level}</span>
+                        <span class="time">${minutes}:${seconds}s</span>
+                    </div>
+                `;
+            });
+            content.innerHTML = html;
         }
+
 
         // --- GAME FLOW ---
 
@@ -300,6 +307,7 @@
             gameState.active = true; gameState.distance = 0;
             gameState.player = { y: 0, vy: 0, rot: 0, mode: 'cube' };
             gameState.levelData = generateLevel(levelVal);
+            gameState.startTime = AudioEngine.ctx.currentTime; // Start timing
 
             // UI Reset
             document.getElementById('main-menu').classList.add('hidden');
@@ -312,7 +320,6 @@
             playerEl.style.background = gameState.currentSkin; playerEl.classList.remove('ship');
             document.getElementById('ceiling').style.top = '-90px';
             
-            // Clear all previous DOM elements and map
             gameState.activeElements.forEach(el => el.remove());
             gameState.activeElements.clear();
             
@@ -320,9 +327,8 @@
         }
 
         function restartLevel() {
-            // Restart uses the currently selected level index
             const levelVal = gameState.currentLevelIndex || parseInt(document.getElementById('level-select').value);
-            document.getElementById('level-select').value = levelVal; // Ensure select box matches
+            document.getElementById('level-select').value = levelVal; 
             startGame();
         }
         
@@ -333,11 +339,16 @@
             document.getElementById('pause-menu').classList.add('hidden');
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('main-menu').classList.remove('hidden');
+            renderLeaderboard(); // Display scores on menu return
         }
+        
+        // Load scores when the page first loads
+        window.onload = renderLeaderboard;
+
 
         function togglePause(shouldPause) {
-            // Pause/Unpause game state and audio
-            gameState.active = shouldPause;
+            gameState.active = !shouldPause;
+            gameState.isPaused = shouldPause;
 
             if (shouldPause) {
                 AudioEngine.stop();
@@ -345,7 +356,7 @@
             } else {
                 AudioEngine.init(gameState.currentLevelIndex);
                 document.getElementById('pause-menu').classList.add('hidden');
-                gameLoop(); // Resume loop
+                gameLoop();
             }
         }
 
@@ -359,64 +370,96 @@
 
         function winGame() {
             gameState.active = false; AudioEngine.stop();
+            
+            const endTime = AudioEngine.ctx.currentTime;
+            const totalTime = endTime - gameState.startTime;
+            const minutes = Math.floor(totalTime / 60);
+            const seconds = (totalTime % 60).toFixed(2);
+            
+            document.getElementById('final-time').innerText = `Time: ${minutes}:${seconds}s`;
+            
+            saveScore(gameState.currentLevelIndex, totalTime);
+
             document.getElementById('end-cutscene').classList.remove('hidden');
         }
 
-        // --- INPUT & ORBS ---
+        // --- INPUT & ORBS (Updated Jump Logic) ---
         let inputHeld = false;
         
         function handleInput(down) {
             inputHeld = down;
             if (down && gameState.active) {
                 if (gameState.player.mode === 'cube') {
-                    if (gameState.player.y <= 0.5) { gameState.player.vy = gameState.jumpPower; }
+                    // JUMP FIX: checking y <= 1.0 (instead of 0.5) makes ground jump detection slightly more forgiving
+                    if (gameState.player.y <= 1.0) { 
+                        gameState.player.vy = gameState.jumpPower;
+                    }
                     checkOrbs();
                 }
             }
         }
         
-        // Input Listeners
-        window.addEventListener('mousedown', () => handleInput(true));
-        window.addEventListener('mouseup', () => handleInput(false));
         window.addEventListener('keydown', (e) => { 
             if(e.code==='Space') handleInput(true);
-            if((e.code==='Escape' || e.code==='KeyP') && gameState.active) { togglePause(true); }
+            if((e.code==='Escape' || e.code==='KeyP') && !gameState.isPaused && gameState.active) { togglePause(true); }
+            else if((e.code==='Escape' || e.code==='KeyP') && gameState.isPaused) { togglePause(false); }
         });
         window.addEventListener('keyup', (e) => { if(e.code==='Space') handleInput(false) });
         
-        // Escape to unpause when menu is visible
-        document.getElementById('pause-menu').addEventListener('keydown', (e) => {
-            if (e.code === 'Escape' || e.code === 'KeyP') { togglePause(false); }
-        });
+        // Simplified listeners for mouse click (jump/unpause if applicable)
+        window.addEventListener('mousedown', () => { if(gameState.active) handleInput(true); });
+        window.addEventListener('mouseup', () => { if(gameState.active) handleInput(false); });
+        
+        // --- GameLoop and Rendering (Unchanged logic structure, only physics/state values changed) ---
+        function generateLevel(levelNum) {
+            let data = [];
+            let length = 150 + (levelNum * 20); 
+            let difficulty = levelNum / 10;
+            let safeCount = 0; 
+            
+            for (let i = 0; i < length; i++) {
+                let obj = { id: i, type: 0, x: i * 60, used: false };
+                if (i < 20 || safeCount > 0) { data.push(obj); safeCount--; continue; }
 
+                let r = Math.random();
+                const minGap = (levelNum >= 9) ? 3 : 4; 
+
+                if (r < (0.1 + difficulty * 0.4)) {
+                    obj.type = 1; safeCount = minGap;
+                } else if (r > 0.96 && levelNum > 3) {
+                    obj.type = 3; safeCount = minGap;
+                } else if (i === 60 && levelNum > 1) {
+                    obj.type = 4;
+                } else if (i === 120 && levelNum > 1) {
+                    obj.type = 5;
+                }
+                data.push(obj);
+            }
+            return data;
+        }
 
         function checkOrbs() {
             const orbs = document.querySelectorAll('.orb');
             const pRect = playerEl.getBoundingClientRect();
             
             orbs.forEach(orbEl => {
-                // Only check orbs that are not used
                 if (orbEl.classList.contains('used')) return;
-
                 const oRect = orbEl.getBoundingClientRect();
                 const dx = (pRect.left + pRect.width/2) - (oRect.left + oRect.width/2);
                 const dy = (pRect.top + pRect.height/2) - (oRect.top + oRect.height/2);
                 const dist = Math.sqrt(dx*dx + dy*dy);
 
-                if (dist < 40) { // Hit radius
+                if (dist < 40) {
                     gameState.player.vy = 15;
                     orbEl.classList.add('used'); 
-                    // No need to update levelData state as the game state is cleared on restart.
                 }
             });
         }
-
-        // --- MAIN LOOP ---
-
+        
         function gameLoop() {
-            if (!gameState.active) return; // Crucial check for pausing
+            if (!gameState.active) return;
 
-            // 1. PHYSICS (Same as previous version)
+            // 1. PHYSICS
             if (gameState.player.mode === 'cube') {
                 gameState.player.vy -= gameState.gravity; gameState.player.y += gameState.player.vy;
                 if (gameState.player.y <= 0) { gameState.player.y = 0; gameState.player.vy = 0; gameState.player.rot += (90 - (gameState.player.rot % 90)) * 0.2; } else { gameState.player.rot += 6; }
@@ -439,11 +482,8 @@
             for (let i = startIdx; i < startIdx + 18; i++) {
                 const obj = gameState.levelData[i];
                 if (!obj) continue;
-                if (obj.type === 0) { // Off-screen or empty tile
-                    if (gameState.activeElements.has(obj.id)) {
-                        gameState.activeElements.get(obj.id).remove();
-                        gameState.activeElements.delete(obj.id);
-                    }
+                if (obj.type === 0) { 
+                    if (gameState.activeElements.has(obj.id)) { gameState.activeElements.get(obj.id).remove(); gameState.activeElements.delete(obj.id); }
                     continue;
                 }
                 
@@ -452,26 +492,17 @@
 
                 // A) Spawn/Retrieve Element
                 if (!el) {
-                    el = document.createElement('div');
-                    el.classList.add('obstacle');
-                    el.style.left = screenX + 'px';
-
+                    el = document.createElement('div'); el.classList.add('obstacle'); el.style.left = screenX + 'px';
                     if (obj.type === 1) el.classList.add('spike');
-                    else if (obj.type === 2) el.classList.add('block');
                     else if (obj.type === 3) el.classList.add('orb');
                     else if (obj.type === 4) el.classList.add('portal', 'portal-ship');
                     else if (obj.type === 5) el.classList.add('portal', 'portal-cube');
                     
-                    if (obj.type === 3 && el.classList.contains('used')) el.classList.add('used');
-
-                    // Set Y position based on type
                     let bottomY = floorHeight;
-                    if (obj.type === 3) bottomY += 100; // Orb
-                    else if (obj.type > 3) bottomY += 50; // Portal
+                    if (obj.type === 3) bottomY += 100; else if (obj.type > 3) bottomY += 50; 
                     el.style.bottom = bottomY + 'px';
 
-                    obsContainer.appendChild(el);
-                    gameState.activeElements.set(obj.id, el);
+                    obsContainer.appendChild(el); gameState.activeElements.set(obj.id, el);
                 }
 
                 // B) Move Element & Check Collision
@@ -479,18 +510,12 @@
                 
                 const isOverlappingX = (150 > screenX - 40 + 35) && (150 < screenX + 40 - 35);
                 
-                if (obj.type === 1) { // Spike
+                if (obj.type === 1) { 
                     if (isOverlappingX && gameState.player.y < 35) { die(); return; }
-                } else if (obj.type === 2) { // Block
-                    if (isOverlappingX && gameState.player.y < 40) { die(); return; }
-                } else if (obj.type === 4) { // Ship Portal
-                    if (150 > screenX && 150 < screenX + 30) { 
-                        gameState.player.mode = 'ship'; playerEl.classList.add('ship'); document.getElementById('ceiling').style.top = '0px'; 
-                    }
-                } else if (obj.type === 5) { // Cube Portal
-                    if (150 > screenX && 150 < screenX + 30) { 
-                        gameState.player.mode = 'cube'; playerEl.classList.remove('ship'); document.getElementById('ceiling').style.top = '-90px'; 
-                    }
+                } else if (obj.type === 4) { 
+                    if (150 > screenX && 150 < screenX + 30) { gameState.player.mode = 'ship'; playerEl.classList.add('ship'); document.getElementById('ceiling').style.top = '0px'; }
+                } else if (obj.type === 5) { 
+                    if (150 > screenX && 150 < screenX + 30) { gameState.player.mode = 'cube'; playerEl.classList.remove('ship'); document.getElementById('ceiling').style.top = '-90px'; }
                 }
                 objectsRendered.push(obj.id);
             }
@@ -502,7 +527,6 @@
                     gameState.activeElements.delete(id);
                 }
             });
-
 
             // 4. PROGRESS & WIN
             let totalDist = gameState.levelData.length * 60;
