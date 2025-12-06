@@ -234,7 +234,7 @@
             active: false,
             levelData: [],
             distance: 0,
-            speed: 8,
+            speed: 6.5, // <<< FIXED: Reduced speed for better jump control
             player: { y: 0, vy: 0, rot: 0, mode: 'cube' },
             gravity: 0.85,
             jumpPower: 14.8,
@@ -243,8 +243,8 @@
             currentLevelIndex: 0,
             startTime: 0,
             isPaused: false,
-            jumpBuffer: 0, // NEW: Tracks jump input buffer time (in frames)
-            maxJumpBuffer: 6 // Approx. 100ms at 60fps
+            jumpBuffer: 0,
+            maxJumpBuffer: 6
         };
 
         // --- LEADERBOARD FUNCTIONS (Unchanged) ---
@@ -329,7 +329,7 @@
             gameState.player = { y: 0, vy: 0, rot: 0, mode: 'cube' };
             gameState.levelData = generateLevel(levelVal);
             gameState.startTime = AudioEngine.ctx.currentTime; 
-            gameState.jumpBuffer = 0; // Reset buffer on start
+            gameState.jumpBuffer = 0;
 
             document.getElementById('main-menu').classList.add('hidden');
             document.getElementById('death-screen').classList.add('hidden');
@@ -402,14 +402,13 @@
             document.getElementById('end-cutscene').classList.remove('hidden');
         }
 
-        // --- INPUT & ORBS (Updated for Jump Buffer) ---
+        // --- INPUT & ORBS (Unchanged) ---
         let inputHeld = false;
         
         function handleInput(down) {
             inputHeld = down;
             if (down && gameState.active) {
                 if (gameState.player.mode === 'cube') {
-                    // Set jump buffer on key press
                     gameState.jumpBuffer = gameState.maxJumpBuffer;
                     checkOrbs();
                 }
@@ -459,7 +458,7 @@
                 // JUMP EXECUTION: Execute jump if buffered AND player is grounded
                 if (gameState.jumpBuffer > 0 && gameState.player.y <= 1.0) {
                     gameState.player.vy = gameState.jumpPower;
-                    gameState.jumpBuffer = 0; // Consume the buffer
+                    gameState.jumpBuffer = 0;
                 }
 
                 gameState.player.vy -= gameState.gravity; gameState.player.y += gameState.player.vy;
@@ -474,7 +473,7 @@
             playerEl.style.bottom = (floorHeight + gameState.player.y) + 'px';
             playerEl.style.transform = `rotate(${gameState.player.rot}deg)`;
 
-            // 3. WORLD MOVEMENT & COLLISION (Unchanged)
+            // 3. WORLD MOVEMENT & COLLISION
             gameState.distance += gameState.speed;
             
             let startIdx = Math.floor(gameState.distance / 60);
